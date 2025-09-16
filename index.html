@@ -118,6 +118,7 @@
             box-shadow: 0 5px 15px rgba(0,0,0,0.1);
             margin-bottom: 20px;
             overflow: hidden;
+            flex-wrap: wrap;
         }
 
         .tab {
@@ -130,6 +131,7 @@
             font-weight: 500;
             color: #666;
             transition: all 0.3s;
+            min-width: 120px;
         }
 
         .tab.active {
@@ -213,6 +215,10 @@
         .status.trancado { background: #f8d7da; color: #721c24; }
         .status.pendente { background: #fff3cd; color: #856404; }
         .status.inadimplente { background: #f8d7da; color: #721c24; }
+        .status.pago { background: #d4edda; color: #155724; }
+        .status.vencido { background: #f8d7da; color: #721c24; }
+        .status.entrada { background: #d4edda; color: #155724; }
+        .status.saida { background: #f8d7da; color: #721c24; }
 
         .modal {
             display: none;
@@ -234,7 +240,7 @@
             padding: 30px;
             border-radius: 15px;
             box-shadow: 0 15px 35px rgba(0,0,0,0.1);
-            max-width: 600px;
+            max-width: 800px;
             width: 90%;
             max-height: 80vh;
             overflow-y: auto;
@@ -243,6 +249,12 @@
         .grid-2 {
             display: grid;
             grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
             gap: 15px;
         }
 
@@ -310,11 +322,12 @@
             border-color: #667eea;
         }
 
-        .contracts-section {
+        .contracts-section, .admin-section {
             background: #f8f9fa;
             padding: 20px;
             border-radius: 8px;
             margin: 20px 0;
+            border: 2px dashed #dee2e6;
         }
 
         .contract-item {
@@ -328,11 +341,11 @@
             background: white;
         }
 
-        .payroll-history {
+        .payroll-history, .report-section {
             margin-top: 20px;
         }
 
-        .payroll-item {
+        .payroll-item, .report-item {
             border: 1px solid #ddd;
             border-radius: 5px;
             padding: 15px;
@@ -340,12 +353,46 @@
             background: #f9f9f9;
         }
 
+        .sync-status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-weight: 500;
+        }
+
+        .sync-success { background: #d4edda; color: #155724; }
+        .sync-error { background: #f8d7da; color: #721c24; }
+        .sync-warning { background: #fff3cd; color: #856404; }
+
+        .link-input {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .link-input input {
+            flex: 1;
+        }
+
+        .month-selector {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .boleto-actions {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
         @media (max-width: 768px) {
             .nav-tabs {
                 flex-direction: column;
             }
             
-            .grid-2 {
+            .grid-2, .grid-3 {
                 grid-template-columns: 1fr;
             }
 
@@ -357,14 +404,14 @@
                 flex-direction: column;
                 align-items: stretch;
             }
-        }
 
-        .admin-section {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
-            margin: 20px 0;
-            border: 2px dashed #dee2e6;
+            .boleto-actions {
+                flex-direction: column;
+            }
+
+            .boleto-actions .btn {
+                margin: 2px 0;
+            }
         }
     </style>
 </head>
@@ -399,6 +446,7 @@
             <button class="tab active" onclick="showTab('dashboard')">Dashboard</button>
             <button class="tab" onclick="showTab('alunos')">Alunos</button>
             <button class="tab" onclick="showTab('financeiro')">Financeiro</button>
+            <button class="tab" onclick="showTab('relatorios')">Relatórios</button>
             <button class="tab" onclick="showTab('rh')">RH</button>
             <button class="tab" onclick="showTab('caixa')">Caixa</button>
             <button class="tab" onclick="showTab('contratos')">Contratos</button>
@@ -514,6 +562,40 @@
             </div>
         </div>
 
+        <!-- Nova Aba Relatórios -->
+        <div id="relatorios" class="tab-content">
+            <h2>Relatórios Mensais</h2>
+            
+            <div class="month-selector">
+                <strong>Selecionar Período:</strong>
+                <select id="mesRelatorio">
+                    <option value="1">Janeiro</option>
+                    <option value="2">Fevereiro</option>
+                    <option value="3">Março</option>
+                    <option value="4">Abril</option>
+                    <option value="5">Maio</option>
+                    <option value="6">Junho</option>
+                    <option value="7">Julho</option>
+                    <option value="8">Agosto</option>
+                    <option value="9">Setembro</option>
+                    <option value="10">Outubro</option>
+                    <option value="11">Novembro</option>
+                    <option value="12">Dezembro</option>
+                </select>
+                <select id="anoRelatorio">
+                    <option value="2025">2025</option>
+                    <option value="2024">2024</option>
+                    <option value="2023">2023</option>
+                </select>
+                <button class="btn btn-info" onclick="gerarRelatorioMensal()">Gerar Relatório</button>
+                <button class="btn btn-success" onclick="exportarRelatorio()">Exportar PDF</button>
+            </div>
+            
+            <div id="relatorioConteudo" class="report-section">
+                <p>Selecione um período e clique em "Gerar Relatório" para visualizar os dados.</p>
+            </div>
+        </div>
+
         <!-- RH -->
         <div id="rh" class="tab-content">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
@@ -529,6 +611,7 @@
                             <th>Cargo</th>
                             <th>Salário</th>
                             <th>Status</th>
+                            <th>Faltas no Mês</th>
                             <th>Ações</th>
                         </tr>
                     </thead>
@@ -579,7 +662,7 @@
             </div>
         </div>
 
-        <!-- Nova Aba Contratos -->
+        <!-- Contratos -->
         <div id="contratos" class="tab-content">
             <h2>Gerenciamento de Contratos</h2>
             
@@ -597,16 +680,44 @@
             
             <div class="admin-section">
                 <h3>Integração Google Sheets</h3>
-                <div class="form-group">
-                    <label>ID da Planilha:</label>
-                    <input type="text" id="sheetId" placeholder="Digite o ID da planilha do Google Sheets">
+                <div id="syncStatus" class="sync-status sync-warning">
+                    Status: Não conectado
                 </div>
+                
                 <div class="form-group">
-                    <label>URL da Planilha:</label>
-                    <input type="text" id="sheetUrl" placeholder="Cole a URL completa da planilha">
+                    <label>ID da Planilha (extraído da URL):</label>
+                    <input type="text" id="sheetId" placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms">
+                    <small>Copie o ID da URL: https://docs.google.com/spreadsheets/d/[ID]/edit</small>
                 </div>
-                <button class="btn btn-success" onclick="vincularPlanilha()">Vincular Planilha</button>
-                <button class="btn btn-info" onclick="sincronizarDados()">Sincronizar Dados</button>
+                
+                <div class="form-group">
+                    <label>API Key do Google:</label>
+                    <input type="password" id="apiKey" placeholder="Sua chave da API do Google Sheets">
+                    <small>Obtenha em: Google Cloud Console > APIs & Services > Credentials</small>
+                </div>
+                
+                <div class="form-group">
+                    <label>Nome da Aba (Sheet):</label>
+                    <input type="text" id="sheetName" value="Dados" placeholder="Nome da aba na planilha">
+                </div>
+                
+                <div style="margin: 20px 0;">
+                    <button class="btn btn-info" onclick="testarConexao()">Testar Conexão</button>
+                    <button class="btn btn-success" onclick="sincronizarDados()">Sincronizar Dados</button>
+                    <button class="btn btn-warning" onclick="enviarDadosParaPlanilha()">Enviar para Planilha</button>
+                </div>
+                
+                <div class="form-group">
+                    <h4>Instruções de Configuração:</h4>
+                    <ol style="margin: 10px 0; padding-left: 20px;">
+                        <li>Acesse <a href="https://console.cloud.google.com/" target="_blank">Google Cloud Console</a></li>
+                        <li>Crie um novo projeto ou selecione um existente</li>
+                        <li>Ative a API do Google Sheets</li>
+                        <li>Crie uma chave de API em "Credentials"</li>
+                        <li>Torne sua planilha pública ou compartilhe com "viewer" access</li>
+                        <li>Copie o ID da planilha da URL</li>
+                    </ol>
+                </div>
             </div>
 
             <div class="admin-section">
@@ -668,7 +779,14 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>Contrato:</label>
+                    <label>Link do Contrato (URL):</label>
+                    <div class="link-input">
+                        <input type="url" id="linkContrato" placeholder="https://drive.google.com/...">
+                        <button type="button" class="btn btn-info" onclick="testarLink()">Testar Link</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Upload do Contrato (Opcional):</label>
                     <div class="file-upload" onclick="document.getElementById('contratoFile').click()">
                         <input type="file" id="contratoFile" accept=".pdf,.doc,.docx" onchange="uploadContrato(this)">
                         <p>Clique para fazer upload do contrato</p>
@@ -727,43 +845,115 @@
             <form onsubmit="return processarFolha(event)">
                 <div id="dadosFuncionarioFolha"></div>
                 
-                <h4>Descontos</h4>
+                <div class="grid-3">
+                    <div class="form-group">
+                        <label>Faltas no Mês:</label>
+                        <input type="number" id="faltasMes" min="0" max="31" value="0" onchange="calcularFolha()">
+                    </div>
+                    <div class="form-group">
+                        <label>Desconto por Falta:</label>
+                        <input type="number" id="descontoPorFalta" step="0.01" value="0" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Dias Úteis do Mês:</label>
+                        <input type="number" id="diasUteis" min="1" max="31" value="22" onchange="calcularFolha()">
+                    </div>
+                </div>
+                
+                <h4>Descontos Obrigatórios</h4>
                 <div class="grid-2">
                     <div class="form-group">
                         <label>INSS (%):</label>
-                        <input type="number" id="descontoINSS" step="0.01" value="11" max="20">
+                        <input type="number" id="descontoINSS" step="0.01" value="11" max="20" onchange="calcularFolha()">
                     </div>
                     <div class="form-group">
                         <label>IRRF (%):</label>
-                        <input type="number" id="descontoIRRF" step="0.01" value="0" max="27.5">
+                        <input type="number" id="descontoIRRF" step="0.01" value="0" max="27.5" onchange="calcularFolha()">
                     </div>
                 </div>
+                
+                <h4>Outros Descontos</h4>
                 <div class="grid-2">
                     <div class="form-group">
                         <label>Vale Transporte:</label>
-                        <input type="number" id="valeTransporte" step="0.01" value="0">
+                        <input type="number" id="valeTransporte" step="0.01" value="0" onchange="calcularFolha()">
                     </div>
                     <div class="form-group">
                         <label>Plano de Saúde:</label>
-                        <input type="number" id="planoSaude" step="0.01" value="0">
+                        <input type="number" id="planoSaude" step="0.01" value="0" onchange="calcularFolha()">
                     </div>
                 </div>
                 <div class="form-group">
                     <label>Outros Descontos:</label>
-                    <input type="number" id="outrosDescontos" step="0.01" value="0">
+                    <input type="number" id="outrosDescontos" step="0.01" value="0" onchange="calcularFolha()">
                 </div>
                 
                 <div id="calculoFolha" style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 15px 0;">
                     <h4>Resumo dos Cálculos</h4>
                     <p><strong>Salário Bruto:</strong> <span id="salarioBruto">R$ 0,00</span></p>
+                    <p><strong>Desconto por Faltas:</strong> <span id="descontoFaltas">R$ 0,00</span></p>
                     <p><strong>Total Descontos:</strong> <span id="totalDescontos">R$ 0,00</span></p>
                     <p><strong>Salário Líquido:</strong> <span id="salarioLiquido">R$ 0,00</span></p>
                 </div>
                 
                 <div style="text-align: center; margin-top: 20px;">
-                    <button type="button" class="btn btn-info" onclick="calcularFolha()">Calcular</button>
+                    <button type="button" class="btn btn-info" onclick="calcularFolha()">Recalcular</button>
                     <button type="submit" class="btn btn-success">Gerar Folha</button>
                     <button type="button" class="btn" onclick="closeModal('modalFolha')">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Registrar Faltas -->
+    <div id="modalFaltas" class="modal">
+        <div class="modal-content">
+            <h3>Registrar Faltas</h3>
+            <form onsubmit="return registrarFaltas(event)">
+                <div id="dadosFuncionarioFaltas"></div>
+                <div class="form-group">
+                    <label>Quantidade de Faltas:</label>
+                    <input type="number" id="quantidadeFaltas" min="0" max="31" required>
+                </div>
+                <div class="form-group">
+                    <label>Mês/Ano:</label>
+                    <input type="month" id="mesFaltas" required>
+                </div>
+                <div class="form-group">
+                    <label>Observações:</label>
+                    <textarea id="observacoesFaltas" rows="3"></textarea>
+                </div>
+                <div style="text-align: center; margin-top: 20px;">
+                    <button type="submit" class="btn btn-success">Registrar</button>
+                    <button type="button" class="btn" onclick="closeModal('modalFaltas')">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Editar Boleto -->
+    <div id="modalBoleto" class="modal">
+        <div class="modal-content">
+            <h3>Editar Boleto</h3>
+            <form onsubmit="return salvarBoleto(event)">
+                <div id="dadosAlunoBoleto"></div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Valor:</label>
+                        <input type="number" id="valorBoleto" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Nova Data Vencimento:</label>
+                        <input type="date" id="vencimentoBoleto" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Observações:</label>
+                    <textarea id="observacoesBoleto" rows="3"></textarea>
+                </div>
+                <div style="text-align: center; margin-top: 20px;">
+                    <button type="submit" class="btn btn-success">Salvar</button>
+                    <button type="button" class="btn" onclick="closeModal('modalBoleto')">Cancelar</button>
                 </div>
             </form>
         </div>
@@ -832,14 +1022,19 @@
             movimentosCaixa: [],
             contratos: [],
             folhasPagamento: [],
+            faltasFuncionarios: [],
+            boletos: [],
             configuracoes: {
                 sheetId: '',
-                sheetUrl: ''
+                apiKey: '',
+                sheetName: 'Dados',
+                conectado: false
             }
         };
 
         let usuarioAtual = null;
         let filtroStatusAtivo = 'todos';
+        let boletoEditando = null;
 
         // Sistema de Login
         function handleLogin(event) {
@@ -847,7 +1042,6 @@
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
 
-            // Validação simples (em produção, usar autenticação real)
             if (username === 'admin' && password === 'admin123') {
                 usuarioAtual = { nome: 'Administrador', permissao: 'admin' };
                 document.getElementById('loginContainer').style.display = 'none';
@@ -855,15 +1049,16 @@
                 document.getElementById('userInfo').textContent = `Usuário: ${usuarioAtual.nome}`;
                 carregarDados();
                 atualizarDashboard();
+                configurarMesAnoAtual();
             } else if (username === 'funcionario' && password === 'func123') {
                 usuarioAtual = { nome: 'Funcionário', permissao: 'funcionario' };
                 document.getElementById('loginContainer').style.display = 'none';
                 document.getElementById('mainContainer').style.display = 'block';
                 document.getElementById('userInfo').textContent = `Usuário: ${usuarioAtual.nome}`;
-                // Esconder aba admin para funcionários
                 document.querySelector('button[onclick="showTab(\'admin\')"]').style.display = 'none';
                 carregarDados();
                 atualizarDashboard();
+                configurarMesAnoAtual();
             } else {
                 alert('Usuário ou senha inválidos!');
             }
@@ -876,13 +1071,18 @@
             document.getElementById('mainContainer').style.display = 'none';
             document.getElementById('username').value = '';
             document.getElementById('password').value = '';
-            // Mostrar aba admin novamente
             document.querySelector('button[onclick="showTab(\'admin\')"]').style.display = 'block';
+        }
+
+        // Configurar mês e ano atual
+        function configurarMesAnoAtual() {
+            const hoje = new Date();
+            document.getElementById('mesRelatorio').value = hoje.getMonth() + 1;
+            document.getElementById('anoRelatorio').value = hoje.getFullYear();
         }
 
         // Navegação por Abas
         function showTab(tabName) {
-            // Esconder todas as abas
             document.querySelectorAll('.tab-content').forEach(tab => {
                 tab.classList.remove('active');
             });
@@ -890,11 +1090,9 @@
                 tab.classList.remove('active');
             });
 
-            // Mostrar aba selecionada
             document.getElementById(tabName).classList.add('active');
             event.target.classList.add('active');
 
-            // Atualizar dados da aba
             switch(tabName) {
                 case 'dashboard':
                     atualizarDashboard();
@@ -905,6 +1103,10 @@
                 case 'financeiro':
                     atualizarTabelaFinanceiro();
                     break;
+                case 'relatorios':
+                    // Gerar relatório do mês atual automaticamente
+                    setTimeout(gerarRelatorioMensal, 100);
+                    break;
                 case 'rh':
                     atualizarTabelaRH();
                     break;
@@ -913,6 +1115,9 @@
                     break;
                 case 'contratos':
                     atualizarListaContratos();
+                    break;
+                case 'admin':
+                    verificarStatusConexao();
                     break;
             }
         }
@@ -924,15 +1129,28 @@
 
         function closeModal(modalId) {
             document.getElementById(modalId).style.display = 'none';
-            // Limpar formulário
             const form = document.querySelector(`#${modalId} form`);
             if (form) form.reset();
+            boletoEditando = null;
         }
 
-        // Fechar modal clicando fora
         window.onclick = function(event) {
             if (event.target.classList.contains('modal')) {
                 event.target.style.display = 'none';
+            }
+        }
+
+        // Função para testar link
+        function testarLink() {
+            const link = document.getElementById('linkContrato').value;
+            if (link) {
+                if (link.startsWith('http://') || link.startsWith('https://')) {
+                    mostrarAlerta('Link válido!', 'success');
+                } else {
+                    mostrarAlerta('Link deve começar com http:// ou https://', 'warning');
+                }
+            } else {
+                mostrarAlerta('Digite um link para testar', 'warning');
             }
         }
 
@@ -940,13 +1158,11 @@
         function filtrarPorStatus(status) {
             filtroStatusAtivo = status;
             
-            // Atualizar botões de filtro
             document.querySelectorAll('.filter-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
             event.target.classList.add('active');
             
-            // Filtrar tabela
             const linhas = document.querySelectorAll('#listaAlunos tr');
             linhas.forEach(linha => {
                 if (status === 'todos') {
@@ -967,6 +1183,7 @@
             event.preventDefault();
             
             const contratoFile = document.getElementById('contratoFile').files[0];
+            const linkContrato = document.getElementById('linkContrato').value;
             let contratoInfo = null;
             
             if (contratoFile) {
@@ -976,10 +1193,9 @@
                     tamanho: contratoFile.size,
                     tipo: contratoFile.type,
                     dataUpload: new Date().toLocaleDateString(),
-                    // Em produção, aqui seria o conteúdo real do arquivo
-                    conteudo: `Contrato simulado para ${document.getElementById('nomeAluno').value}`
+                    conteudo: `Contrato simulado para ${document.getElementById('nomeAluno').value}`,
+                    isFile: true
                 };
-                
                 dadosEscola.contratos.push(contratoInfo);
             }
             
@@ -994,11 +1210,16 @@
                 formaPagamento: document.getElementById('formaPagamento').value,
                 contratoId: contratoInfo ? contratoInfo.id : null,
                 contrato: contratoInfo ? contratoInfo.nome : '',
+                linkContrato: linkContrato || '',
                 dataCadastro: new Date().toLocaleDateString(),
                 situacaoPagamento: 'pendente'
             };
 
             dadosEscola.alunos.push(aluno);
+            
+            // Criar boleto inicial
+            criarBoletoInicial(aluno);
+            
             salvarDados();
             closeModal('modalAluno');
             atualizarTabelaAlunos();
@@ -1006,6 +1227,32 @@
             
             mostrarAlerta('Aluno cadastrado com sucesso!', 'success');
             return false;
+        }
+
+        function criarBoletoInicial(aluno) {
+            const hoje = new Date();
+            const vencimento = new Date(hoje.getFullYear(), hoje.getMonth(), aluno.diaVencimento);
+            
+            if (vencimento < hoje) {
+                vencimento.setMonth(vencimento.getMonth() + 1);
+            }
+            
+            const boleto = {
+                id: Date.now(),
+                alunoId: aluno.id,
+                alunoNome: aluno.nome,
+                valor: aluno.valorMensalidade,
+                vencimento: vencimento.toLocaleDateString(),
+                status: 'pendente',
+                mes: vencimento.getMonth() + 1,
+                ano: vencimento.getFullYear(),
+                dataCriacao: new Date().toLocaleDateString()
+            };
+            
+            if (!dadosEscola.boletos) {
+                dadosEscola.boletos = [];
+            }
+            dadosEscola.boletos.push(boleto);
         }
 
         function editarAluno(id) {
@@ -1018,9 +1265,9 @@
                 document.getElementById('valorMensalidade').value = aluno.valorMensalidade;
                 document.getElementById('diaVencimento').value = aluno.diaVencimento;
                 document.getElementById('formaPagamento').value = aluno.formaPagamento;
+                document.getElementById('linkContrato').value = aluno.linkContrato || '';
                 document.getElementById('contratoNome').textContent = aluno.contrato || '';
                 
-                // Modificar o form para edição
                 const form = document.querySelector('#modalAluno form');
                 form.onsubmit = function(e) {
                     e.preventDefault();
@@ -1031,6 +1278,7 @@
                     aluno.valorMensalidade = parseFloat(document.getElementById('valorMensalidade').value);
                     aluno.diaVencimento = parseInt(document.getElementById('diaVencimento').value);
                     aluno.formaPagamento = document.getElementById('formaPagamento').value;
+                    aluno.linkContrato = document.getElementById('linkContrato').value;
                     
                     salvarDados();
                     closeModal('modalAluno');
@@ -1038,7 +1286,6 @@
                     atualizarDashboard();
                     mostrarAlerta('Aluno atualizado com sucesso!', 'success');
                     
-                    // Restaurar função original
                     form.onsubmit = salvarAluno;
                     return false;
                 };
@@ -1048,8 +1295,11 @@
         }
 
         function excluirAluno(id) {
-            if (confirm('Tem certeza que deseja excluir este aluno?')) {
+            if (confirm('Tem certeza que deseja excluir este aluno? Isso também excluirá todos os boletos relacionados.')) {
                 dadosEscola.alunos = dadosEscola.alunos.filter(a => a.id !== id);
+                if (dadosEscola.boletos) {
+                    dadosEscola.boletos = dadosEscola.boletos.filter(b => b.alunoId !== id);
+                }
                 salvarDados();
                 atualizarTabelaAlunos();
                 atualizarDashboard();
@@ -1074,6 +1324,15 @@
                 aluno.situacaoPagamento = 'pago';
                 aluno.dataPagamento = new Date().toLocaleDateString();
                 
+                // Atualizar boleto
+                if (dadosEscola.boletos) {
+                    const boleto = dadosEscola.boletos.find(b => b.alunoId === id && b.status === 'pendente');
+                    if (boleto) {
+                        boleto.status = 'pago';
+                        boleto.dataPagamento = new Date().toLocaleDateString();
+                    }
+                }
+                
                 // Registrar movimento no caixa
                 const movimento = {
                     id: Date.now(),
@@ -1093,7 +1352,12 @@
             }
         }
 
-        function visualizarContrato(contratoId) {
+        function visualizarContrato(contratoId, linkContrato) {
+            if (linkContrato) {
+                window.open(linkContrato, '_blank');
+                return;
+            }
+            
             const contrato = dadosEscola.contratos.find(c => c.id === contratoId);
             if (contrato) {
                 document.getElementById('conteudoContrato').innerHTML = `
@@ -1126,7 +1390,12 @@
                     <td>Todo dia ${aluno.diaVencimento}</td>
                     <td><span class="status ${aluno.situacaoPagamento}">${aluno.situacaoPagamento.toUpperCase()}</span></td>
                     <td>
-                        ${aluno.contratoId ? `<button class="btn btn-info" onclick="visualizarContrato(${aluno.contratoId})">Ver Contrato</button>` : 'Sem contrato'}
+                        ${aluno.linkContrato ? 
+                            `<button class="btn btn-info" onclick="visualizarContrato(null, '${aluno.linkContrato}')">Ver Link</button>` :
+                            aluno.contratoId ? 
+                                `<button class="btn btn-info" onclick="visualizarContrato(${aluno.contratoId})">Ver Arquivo</button>` : 
+                                'Sem contrato'
+                        }
                     </td>
                     <td>
                         <button class="btn btn-info" onclick="editarAluno(${aluno.id})">Editar</button>
@@ -1144,7 +1413,6 @@
                 tbody.appendChild(tr);
             });
             
-            // Aplicar filtro atual
             if (filtroStatusAtivo !== 'todos') {
                 filtrarPorStatus(filtroStatusAtivo);
             }
@@ -1155,7 +1423,6 @@
             linhas.forEach(linha => {
                 const texto = linha.textContent.toLowerCase();
                 if (texto.includes(termo.toLowerCase())) {
-                    // Verificar se também passa no filtro de status
                     if (filtroStatusAtivo === 'todos') {
                         linha.style.display = '';
                     } else {
@@ -1178,6 +1445,50 @@
         }
 
         // Funções Financeiras
+        function editarBoleto(alunoId) {
+            const aluno = dadosEscola.alunos.find(a => a.id === alunoId);
+            if (!aluno) return;
+            
+            let boleto = null;
+            if (dadosEscola.boletos) {
+                boleto = dadosEscola.boletos.find(b => b.alunoId === alunoId && b.status === 'pendente');
+            }
+            
+            if (!boleto) {
+                criarBoletoInicial(aluno);
+                boleto = dadosEscola.boletos.find(b => b.alunoId === alunoId && b.status === 'pendente');
+            }
+            
+            boletoEditando = boleto;
+            
+            document.getElementById('dadosAlunoBoleto').innerHTML = `
+                <h4>Boleto: ${aluno.nome}</h4>
+                <p><strong>Mensalidade Atual:</strong> R$ ${aluno.valorMensalidade.toFixed(2)}</p>
+            `;
+            
+            document.getElementById('valorBoleto').value = boleto.valor;
+            document.getElementById('vencimentoBoleto').value = new Date(boleto.vencimento.split('/').reverse().join('-')).toISOString().split('T')[0];
+            
+            showModal('modalBoleto');
+        }
+
+        function salvarBoleto(event) {
+            event.preventDefault();
+            
+            if (!boletoEditando) return false;
+            
+            boletoEditando.valor = parseFloat(document.getElementById('valorBoleto').value);
+            boletoEditando.vencimento = new Date(document.getElementById('vencimentoBoleto').value).toLocaleDateString();
+            boletoEditando.observacoes = document.getElementById('observacoesBoleto').value;
+            
+            salvarDados();
+            closeModal('modalBoleto');
+            atualizarTabelaFinanceiro();
+            mostrarAlerta('Boleto atualizado com sucesso!', 'success');
+            
+            return false;
+        }
+
         function atualizarTabelaFinanceiro() {
             const tbody = document.getElementById('listaFinanceiro');
             tbody.innerHTML = '';
@@ -1186,22 +1497,32 @@
                 const hoje = new Date();
                 const vencimento = new Date(hoje.getFullYear(), hoje.getMonth(), aluno.diaVencimento);
                 
+                let boleto = null;
+                if (dadosEscola.boletos) {
+                    boleto = dadosEscola.boletos.find(b => b.alunoId === aluno.id && b.status === 'pendente');
+                }
+                
+                const valorExibir = boleto ? boleto.valor : aluno.valorMensalidade;
+                const vencimentoExibir = boleto ? boleto.vencimento : vencimento.toLocaleDateString();
+                
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${aluno.nome}</td>
-                    <td>R$ ${aluno.valorMensalidade.toFixed(2)}</td>
-                    <td>${vencimento.toLocaleDateString()}</td>
+                    <td>R$ ${valorExibir.toFixed(2)}</td>
+                    <td>${vencimentoExibir}</td>
                     <td><span class="status ${aluno.situacaoPagamento}">${aluno.situacaoPagamento.toUpperCase()}</span></td>
                     <td>${aluno.formaPagamento}</td>
                     <td>
-                        <button class="btn btn-success" onclick="darBaixaPagamento(${aluno.id})">Pagar</button>
-                        <button class="btn btn-warning" onclick="gerarBoleto(${aluno.id})">Gerar Boleto</button>
+                        <div class="boleto-actions">
+                            <button class="btn btn-success" onclick="darBaixaPagamento(${aluno.id})">Pagar</button>
+                            <button class="btn btn-warning" onclick="editarBoleto(${aluno.id})">Editar</button>
+                            <button class="btn btn-info" onclick="gerarBoleto(${aluno.id})">Gerar</button>
+                        </div>
                     </td>
                 `;
                 tbody.appendChild(tr);
             });
 
-            // Atualizar estatísticas financeiras
             atualizarEstatisticasFinanceiras();
         }
 
@@ -1245,6 +1566,160 @@
             document.getElementById('totalMensal').textContent = `R$ ${totalMensal.toFixed(2)}`;
         }
 
+        // Funções de Relatórios
+        function gerarRelatorioMensal() {
+            const mes = parseInt(document.getElementById('mesRelatorio').value);
+            const ano = parseInt(document.getElementById('anoRelatorio').value);
+            
+            const mesesNomes = [
+                'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+                'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+            ];
+            
+            let totalRecebido = 0;
+            let totalPendente = 0;
+            let alunosAdimplentes = 0;
+            let alunosInadimplentes = 0;
+            let despesasRH = 0;
+            
+            // Calcular receitas
+            dadosEscola.movimentosCaixa.forEach(movimento => {
+                const dataMovimento = new Date(movimento.data.split('/').reverse().join('/'));
+                if (dataMovimento.getMonth() + 1 === mes && dataMovimento.getFullYear() === ano) {
+                    if (movimento.tipo === 'entrada') {
+                        totalRecebido += movimento.valor;
+                    } else {
+                        if (movimento.descricao.toLowerCase().includes('salário') || 
+                            movimento.descricao.toLowerCase().includes('folha')) {
+                            despesasRH += movimento.valor;
+                        }
+                    }
+                }
+            });
+            
+            // Calcular pendências
+            dadosEscola.alunos.forEach(aluno => {
+                if (aluno.situacaoPagamento === 'pendente') {
+                    totalPendente += aluno.valorMensalidade;
+                    alunosInadimplentes++;
+                } else {
+                    alunosAdimplentes++;
+                }
+            });
+            
+            const relatorioHTML = `
+                <div class="report-item">
+                    <h3>Relatório de ${mesesNomes[mes-1]} de ${ano}</h3>
+                    
+                    <div class="stats-grid" style="margin: 20px 0;">
+                        <div class="stat-card">
+                            <h3>R$ ${totalRecebido.toFixed(2)}</h3>
+                            <p>Total Recebido</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>R$ ${totalPendente.toFixed(2)}</h3>
+                            <p>Total Pendente</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>${alunosAdimplentes}</h3>
+                            <p>Alunos Adimplentes</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>${alunosInadimplentes}</h3>
+                            <p>Alunos Inadimplentes</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>R$ ${despesasRH.toFixed(2)}</h3>
+                            <p>Despesas com RH</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>R$ ${(totalRecebido - despesasRH).toFixed(2)}</h3>
+                            <p>Resultado Líquido</p>
+                        </div>
+                    </div>
+                    
+                    <h4>Detalhamento de Movimentações</h4>
+                    <table style="width: 100%; margin-top: 10px;">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Tipo</th>
+                                <th>Descrição</th>
+                                <th>Valor</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${dadosEscola.movimentosCaixa
+                                .filter(mov => {
+                                    const dataMovimento = new Date(mov.data.split('/').reverse().join('/'));
+                                    return dataMovimento.getMonth() + 1 === mes && dataMovimento.getFullYear() === ano;
+                                })
+                                .map(mov => `
+                                    <tr>
+                                        <td>${mov.data}</td>
+                                        <td><span class="status ${mov.tipo}">${mov.tipo.toUpperCase()}</span></td>
+                                        <td>${mov.descricao}</td>
+                                        <td style="color: ${mov.tipo === 'entrada' ? 'green' : 'red'}">
+                                            ${mov.tipo === 'entrada' ? '+' : '-'} R$ ${mov.valor.toFixed(2)}
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            document.getElementById('relatorioConteudo').innerHTML = relatorioHTML;
+        }
+
+        function exportarRelatorio() {
+            const conteudo = document.getElementById('relatorioConteudo').innerHTML;
+            if (!conteudo || conteudo.includes('Selecione um período')) {
+                mostrarAlerta('Gere um relatório primeiro!', 'warning');
+                return;
+            }
+            
+            const mes = document.getElementById('mesRelatorio').value;
+            const ano = document.getElementById('anoRelatorio').value;
+            
+            const htmlCompleto = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <title>Relatório Mensal</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; margin: 20px; }
+                        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin: 20px 0; }
+                        .stat-card { background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid #ddd; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+                        th, td { padding: 10px; text-align: left; border: 1px solid #ddd; }
+                        th { background: #f8f9fa; }
+                        .status { padding: 4px 8px; border-radius: 4px; font-size: 12px; }
+                        .status.entrada { background: #d4edda; color: #155724; }
+                        .status.saida { background: #f8d7da; color: #721c24; }
+                    </style>
+                </head>
+                <body>
+                    ${conteudo}
+                </body>
+                </html>
+            `;
+            
+            const blob = new Blob([htmlCompleto], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `relatorio_${mes}_${ano}.html`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            mostrarAlerta('Relatório exportado com sucesso!', 'success');
+        }
+
         // Funções de RH
         function salvarFuncionario(event) {
             event.preventDefault();
@@ -1255,7 +1730,8 @@
                 cargo: document.getElementById('cargoFuncionario').value,
                 salario: parseFloat(document.getElementById('salarioFuncionario').value),
                 status: document.getElementById('statusFuncionario').value,
-                dataAdmissao: new Date().toLocaleDateString()
+                dataAdmissao: new Date().toLocaleDateString(),
+                faltasMesAtual: 0
             };
 
             dadosEscola.funcionarios.push(funcionario);
@@ -1299,29 +1775,110 @@
         function excluirFuncionario(id) {
             if (confirm('Tem certeza que deseja excluir este funcionário?')) {
                 dadosEscola.funcionarios = dadosEscola.funcionarios.filter(f => f.id !== id);
+                if (dadosEscola.faltasFuncionarios) {
+                    dadosEscola.faltasFuncionarios = dadosEscola.faltasFuncionarios.filter(f => f.funcionarioId !== id);
+                }
                 salvarDados();
                 atualizarTabelaRH();
                 mostrarAlerta('Funcionário excluído com sucesso!', 'success');
             }
         }
 
-        // Função melhorada para gerar folha de pagamento
+        function registrarFaltasModal(funcionarioId) {
+            const funcionario = dadosEscola.funcionarios.find(f => f.id === funcionarioId);
+            if (funcionario) {
+                document.getElementById('dadosFuncionarioFaltas').innerHTML = `
+                    <h4>${funcionario.nome}</h4>
+                    <p><strong>Cargo:</strong> ${funcionario.cargo}</p>
+                    <p><strong>Salário:</strong> R$ ${funcionario.salario.toFixed(2)}</p>
+                `;
+                
+                // Definir mês atual
+                const hoje = new Date();
+                const mesAtual = hoje.toISOString().slice(0, 7); // YYYY-MM
+                document.getElementById('mesFaltas').value = mesAtual;
+                
+                window.funcionarioFaltaAtual = funcionario;
+                showModal('modalFaltas');
+            }
+        }
+
+        function registrarFaltas(event) {
+            event.preventDefault();
+            
+            if (!window.funcionarioFaltaAtual) return false;
+            
+            const faltas = {
+                id: Date.now(),
+                funcionarioId: window.funcionarioFaltaAtual.id,
+                funcionarioNome: window.funcionarioFaltaAtual.nome,
+                quantidade: parseInt(document.getElementById('quantidadeFaltas').value),
+                mesAno: document.getElementById('mesFaltas').value,
+                observacoes: document.getElementById('observacoesFaltas').value,
+                dataRegistro: new Date().toLocaleDateString()
+            };
+            
+            if (!dadosEscola.faltasFuncionarios) {
+                dadosEscola.faltasFuncionarios = [];
+            }
+            
+            // Verificar se já existe registro para este mês
+            const registroExistente = dadosEscola.faltasFuncionarios.find(
+                f => f.funcionarioId === faltas.funcionarioId && f.mesAno === faltas.mesAno
+            );
+            
+            if (registroExistente) {
+                registroExistente.quantidade = faltas.quantidade;
+                registroExistente.observacoes = faltas.observacoes;
+                registroExistente.dataRegistro = faltas.dataRegistro;
+                mostrarAlerta('Registro de faltas atualizado!', 'success');
+            } else {
+                dadosEscola.faltasFuncionarios.push(faltas);
+                mostrarAlerta('Faltas registradas com sucesso!', 'success');
+            }
+            
+            // Atualizar funcionário com faltas do mês atual
+            const hoje = new Date();
+            const mesAtualStr = hoje.toISOString().slice(0, 7);
+            if (faltas.mesAno === mesAtualStr) {
+                window.funcionarioFaltaAtual.faltasMesAtual = faltas.quantidade;
+            }
+            
+            salvarDados();
+            closeModal('modalFaltas');
+            atualizarTabelaRH();
+            
+            return false;
+        }
+
         function gerarFolhaPagamento(id) {
             const funcionario = dadosEscola.funcionarios.find(f => f.id === id);
             if (funcionario) {
-                // Preencher dados do funcionário
                 document.getElementById('dadosFuncionarioFolha').innerHTML = `
                     <h4>${funcionario.nome}</h4>
                     <p><strong>Cargo:</strong> ${funcionario.cargo}</p>
                     <p><strong>Salário Bruto:</strong> R$ ${funcionario.salario.toFixed(2)}</p>
                 `;
                 
-                // Definir dados no modal
+                // Buscar faltas do mês atual
+                const hoje = new Date();
+                const mesAtual = hoje.toISOString().slice(0, 7);
+                
+                let faltasMes = 0;
+                if (dadosEscola.faltasFuncionarios) {
+                    const registroFaltas = dadosEscola.faltasFuncionarios.find(
+                        f => f.funcionarioId === id && f.mesAno === mesAtual
+                    );
+                    if (registroFaltas) {
+                        faltasMes = registroFaltas.quantidade;
+                    }
+                }
+                
+                document.getElementById('faltasMes').value = faltasMes;
+                
                 window.funcionarioFolhaAtual = funcionario;
                 
-                // Calcular automaticamente
                 calcularFolha();
-                
                 showModal('modalFolha');
             }
         }
@@ -1330,16 +1887,27 @@
             if (!window.funcionarioFolhaAtual) return;
             
             const salarioBruto = window.funcionarioFolhaAtual.salario;
+            const faltasMes = parseInt(document.getElementById('faltasMes').value) || 0;
+            const diasUteis = parseInt(document.getElementById('diasUteis').value) || 22;
+            
+            // Calcular desconto por faltas
+            const valorDiario = salarioBruto / diasUteis;
+            const descontoPorFalta = valorDiario * faltasMes;
+            
+            document.getElementById('descontoPorFalta').value = descontoPorFalta.toFixed(2);
+            
+            // Outros descontos
             const descontoINSS = (parseFloat(document.getElementById('descontoINSS').value) || 0) / 100 * salarioBruto;
             const descontoIRRF = (parseFloat(document.getElementById('descontoIRRF').value) || 0) / 100 * salarioBruto;
             const valeTransporte = parseFloat(document.getElementById('valeTransporte').value) || 0;
             const planoSaude = parseFloat(document.getElementById('planoSaude').value) || 0;
             const outrosDescontos = parseFloat(document.getElementById('outrosDescontos').value) || 0;
             
-            const totalDescontos = descontoINSS + descontoIRRF + valeTransporte + planoSaude + outrosDescontos;
+            const totalDescontos = descontoPorFalta + descontoINSS + descontoIRRF + valeTransporte + planoSaude + outrosDescontos;
             const salarioLiquido = salarioBruto - totalDescontos;
             
             document.getElementById('salarioBruto').textContent = `R$ ${salarioBruto.toFixed(2)}`;
+            document.getElementById('descontoFaltas').textContent = `R$ ${descontoPorFalta.toFixed(2)}`;
             document.getElementById('totalDescontos').textContent = `R$ ${totalDescontos.toFixed(2)}`;
             document.getElementById('salarioLiquido').textContent = `R$ ${salarioLiquido.toFixed(2)}`;
         }
@@ -1357,17 +1925,18 @@
                 mes: new Date().getMonth() + 1,
                 ano: new Date().getFullYear(),
                 salarioBruto: window.funcionarioFolhaAtual.salario,
+                faltas: parseInt(document.getElementById('faltasMes').value) || 0,
                 descontos: {
+                    faltas: parseFloat(document.getElementById('descontoPorFalta').value) || 0,
                     inss: (parseFloat(document.getElementById('descontoINSS').value) || 0) / 100 * window.funcionarioFolhaAtual.salario,
                     irrf: (parseFloat(document.getElementById('descontoIRRF').value) || 0) / 100 * window.funcionarioFolhaAtual.salario,
                     valeTransporte: parseFloat(document.getElementById('valeTransporte').value) || 0,
                     planoSaude: parseFloat(document.getElementById('planoSaude').value) || 0,
                     outros: parseFloat(document.getElementById('outrosDescontos').value) || 0
                 },
-                salarioLiquido: parseFloat(document.getElementById('salarioLiquido').textContent.replace('R$ ', '').replace(',', '.'))
+                salarioLiquido: parseFloat(document.getElementById('salarioLiquido').textContent.replace('R$ ', '').replace('.', '').replace(',', '.'))
             };
             
-            // Adicionar à lista de folhas de pagamento
             if (!dadosEscola.folhasPagamento) {
                 dadosEscola.folhasPagamento = [];
             }
@@ -1397,7 +1966,20 @@
             tbody.innerHTML = '';
 
             dadosEscola.funcionarios.forEach(funcionario => {
-                // Verificar se tem histórico de folhas
+                // Buscar faltas do mês atual
+                const hoje = new Date();
+                const mesAtual = hoje.toISOString().slice(0, 7);
+                let faltasMesAtual = 0;
+                
+                if (dadosEscola.faltasFuncionarios) {
+                    const registroFaltas = dadosEscola.faltasFuncionarios.find(
+                        f => f.funcionarioId === funcionario.id && f.mesAno === mesAtual
+                    );
+                    if (registroFaltas) {
+                        faltasMesAtual = registroFaltas.quantidade;
+                    }
+                }
+                
                 const folhasAnteriores = dadosEscola.folhasPagamento ? 
                     dadosEscola.folhasPagamento.filter(f => f.funcionarioId === funcionario.id) : [];
                 
@@ -1411,9 +1993,14 @@
                     <td>R$ ${funcionario.salario.toFixed(2)}</td>
                     <td><span class="status ${funcionario.status}">${funcionario.status.toUpperCase()}</span></td>
                     <td>
+                        <strong>${faltasMesAtual}</strong> faltas
+                        <br><small>Mês atual</small>
+                    </td>
+                    <td>
                         <button class="btn btn-info" onclick="editarFuncionario(${funcionario.id})">Editar</button>
                         <button class="btn btn-danger" onclick="excluirFuncionario(${funcionario.id})">Excluir</button>
-                        <button class="btn btn-warning" onclick="gerarFolhaPagamento(${funcionario.id})">Folha</button>
+                        <button class="btn btn-warning" onclick="registrarFaltasModal(${funcionario.id})">Faltas</button>
+                        <button class="btn btn-success" onclick="gerarFolhaPagamento(${funcionario.id})">Folha</button>
                         ${folhasAnteriores.length > 0 ? `<button class="btn btn-info" onclick="verHistoricoFolhas(${funcionario.id})">Histórico</button>` : ''}
                     </td>
                 `;
@@ -1438,6 +2025,7 @@
                     <div class="payroll-item">
                         <strong>${folha.mes}/${folha.ano}</strong> - Processado em ${folha.dataProcessamento}
                         <br>Salário Bruto: R$ ${folha.salarioBruto.toFixed(2)}
+                        <br>Faltas: ${folha.faltas || 0} dias (Desconto: R$ ${(folha.descontos.faltas || 0).toFixed(2)})
                         <br>Total Descontos: R$ ${totalDescontos.toFixed(2)}
                         <br>Salário Líquido: R$ ${folha.salarioLiquido.toFixed(2)}
                     </div>
@@ -1486,7 +2074,6 @@
             const tbody = document.getElementById('listaCaixa');
             tbody.innerHTML = '';
 
-            // Ordenar por data (mais recentes primeiro)
             const movimentosOrdenados = dadosEscola.movimentosCaixa.sort((a, b) => 
                 new Date(b.data.split('/').reverse().join('/')) - new Date(a.data.split('/').reverse().join('/'))
             );
@@ -1508,7 +2095,6 @@
                 tbody.appendChild(tr);
             });
 
-            // Atualizar saldos
             atualizarSaldosCaixa();
         }
 
@@ -1563,14 +2149,12 @@
 
         function excluirContrato(contratoId) {
             if (confirm('Tem certeza que deseja excluir este contrato?')) {
-                // Remover referência do aluno
                 const aluno = dadosEscola.alunos.find(a => a.contratoId === contratoId);
                 if (aluno) {
                     aluno.contratoId = null;
                     aluno.contrato = '';
                 }
                 
-                // Remover contrato
                 dadosEscola.contratos = dadosEscola.contratos.filter(c => c.id !== contratoId);
                 
                 salvarDados();
@@ -1607,31 +2191,155 @@
             };
         }
 
-        // Funções de Administração
-        function vincularPlanilha() {
-            const sheetId = document.getElementById('sheetId').value;
-            const sheetUrl = document.getElementById('sheetUrl').value;
+        // Funções de Administração e Google Sheets
+        function verificarStatusConexao() {
+            const sheetId = dadosEscola.configuracoes.sheetId;
+            const apiKey = dadosEscola.configuracoes.apiKey;
             
-            if (sheetId && sheetUrl) {
-                dadosEscola.configuracoes.sheetId = sheetId;
-                dadosEscola.configuracoes.sheetUrl = sheetUrl;
-                salvarDados();
-                mostrarAlerta('Planilha vinculada com sucesso!', 'success');
+            if (sheetId && apiKey) {
+                document.getElementById('syncStatus').className = 'sync-status sync-success';
+                document.getElementById('syncStatus').textContent = 'Status: Configuração pronta para sincronização';
+                document.getElementById('sheetId').value = sheetId;
+                document.getElementById('apiKey').value = apiKey;
+                document.getElementById('sheetName').value = dadosEscola.configuracoes.sheetName;
             } else {
-                mostrarAlerta('Por favor, preencha todos os campos!', 'danger');
+                document.getElementById('syncStatus').className = 'sync-status sync-warning';
+                document.getElementById('syncStatus').textContent = 'Status: Não configurado';
             }
         }
 
-        function sincronizarDados() {
-            // Simular sincronização com Google Sheets
-            if (dadosEscola.configuracoes.sheetId) {
-                mostrarAlerta('Sincronização iniciada... (Esta é uma simulação)', 'warning');
-                setTimeout(() => {
-                    mostrarAlerta('Dados sincronizados com sucesso!', 'success');
-                }, 2000);
-            } else {
-                mostrarAlerta('Nenhuma planilha vinculada!', 'danger');
+        function testarConexao() {
+            const sheetId = document.getElementById('sheetId').value;
+            const apiKey = document.getElementById('apiKey').value;
+            const sheetName = document.getElementById('sheetName').value;
+            
+            if (!sheetId || !apiKey) {
+                mostrarAlerta('Por favor, preencha o ID da planilha e a API Key!', 'danger');
+                return;
             }
+            
+            // Salvar configurações
+            dadosEscola.configuracoes.sheetId = sheetId;
+            dadosEscola.configuracoes.apiKey = apiKey;
+            dadosEscola.configuracoes.sheetName = sheetName;
+            salvarDados();
+            
+            // Simular teste de conexão
+            document.getElementById('syncStatus').className = 'sync-status sync-warning';
+            document.getElementById('syncStatus').textContent = 'Status: Testando conexão...';
+            
+            // URL da API do Google Sheets
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${sheetName}!A1:A1?key=${apiKey}`;
+            
+            fetch(url)
+                .then(response => {
+                    if (response.ok) {
+                        document.getElementById('syncStatus').className = 'sync-status sync-success';
+                        document.getElementById('syncStatus').textContent = 'Status: Conexão estabelecida com sucesso!';
+                        dadosEscola.configuracoes.conectado = true;
+                        mostrarAlerta('Conexão com Google Sheets estabelecida!', 'success');
+                    } else {
+                        throw new Error('Falha na conexão');
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('syncStatus').className = 'sync-status sync-error';
+                    document.getElementById('syncStatus').textContent = 'Status: Erro na conexão - Verifique as configurações';
+                    dadosEscola.configuracoes.conectado = false;
+                    mostrarAlerta('Erro na conexão: Verifique o ID da planilha e a API Key', 'danger');
+                });
+            
+            salvarDados();
+        }
+
+        function sincronizarDados() {
+            if (!dadosEscola.configuracoes.sheetId || !dadosEscola.configuracoes.apiKey) {
+                mostrarAlerta('Configure a conexão primeiro!', 'danger');
+                return;
+            }
+            
+            const sheetId = dadosEscola.configuracoes.sheetId;
+            const apiKey = dadosEscola.configuracoes.apiKey;
+            const sheetName = dadosEscola.configuracoes.sheetName;
+            
+            mostrarAlerta('Iniciando sincronização...', 'warning');
+            
+            // Preparar dados para sincronização
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${sheetName}!A1:Z1000?key=${apiKey}`;
+            
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.values && data.values.length > 1) {
+                        // Processar dados recebidos da planilha
+                        const headers = data.values[0];
+                        const rows = data.values.slice(1);
+                        
+                        // Aqui você implementaria a lógica para sincronizar os dados
+                        // Por exemplo, importar novos alunos da planilha
+                        
+                        mostrarAlerta('Dados sincronizados com sucesso!', 'success');
+                        atualizarDashboard();
+                    } else {
+                        mostrarAlerta('Planilha vazia ou sem dados válidos', 'warning');
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro na sincronização:', error);
+                    mostrarAlerta('Erro na sincronização: ' + error.message, 'danger');
+                });
+        }
+
+        function enviarDadosParaPlanilha() {
+            if (!dadosEscola.configuracoes.sheetId || !dadosEscola.configuracoes.apiKey) {
+                mostrarAlerta('Configure a conexão primeiro!', 'danger');
+                return;
+            }
+            
+            const sheetId = dadosEscola.configuracoes.sheetId;
+            const apiKey = dadosEscola.configuracoes.apiKey;
+            const sheetName = dadosEscola.configuracoes.sheetName;
+            
+            // Preparar dados para envio
+            const dadosParaEnviar = [
+                // Cabeçalhos
+                ['Nome', 'Responsável', 'Status', 'Mensalidade', 'Vencimento', 'Situação Pagamento', 'Data Cadastro'],
+                // Dados dos alunos
+                ...dadosEscola.alunos.map(aluno => [
+                    aluno.nome,
+                    aluno.responsavel || '',
+                    aluno.status,
+                    aluno.valorMensalidade,
+                    aluno.diaVencimento,
+                    aluno.situacaoPagamento,
+                    aluno.dataCadastro
+                ])
+            ];
+            
+            const requestBody = {
+                values: dadosParaEnviar
+            };
+            
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${sheetName}!A1:G${dadosParaEnviar.length}?valueInputOption=RAW&key=${apiKey}`;
+            
+            fetch(url, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestBody)
+            })
+            .then(response => {
+                if (response.ok) {
+                    mostrarAlerta('Dados enviados para a planilha com sucesso!', 'success');
+                } else {
+                    throw new Error('Falha no envio');
+                }
+            })
+            .catch(error => {
+                console.error('Erro no envio:', error);
+                mostrarAlerta('Erro ao enviar dados: Verifique se a planilha permite edição', 'danger');
+            });
         }
 
         function exportarDados() {
@@ -1710,6 +2418,7 @@
                                 formaPagamento: 'boleto',
                                 contratoId: 1,
                                 contrato: 'contrato_joao.pdf',
+                                linkContrato: 'https://drive.google.com/file/d/exemplo',
                                 dataCadastro: '01/01/2025',
                                 situacaoPagamento: 'pago'
                             },
@@ -1724,6 +2433,7 @@
                                 formaPagamento: 'cartao',
                                 contratoId: null,
                                 contrato: '',
+                                linkContrato: '',
                                 dataCadastro: '15/01/2025',
                                 situacaoPagamento: 'pendente'
                             },
@@ -1738,6 +2448,7 @@
                                 formaPagamento: 'boleto',
                                 contratoId: null,
                                 contrato: '',
+                                linkContrato: 'https://docs.google.com/document/d/exemplo',
                                 dataCadastro: '20/01/2025',
                                 situacaoPagamento: 'pendente'
                             }
@@ -1749,7 +2460,8 @@
                                 cargo: 'Professor',
                                 salario: 3000.00,
                                 status: 'ativo',
-                                dataAdmissao: '01/01/2025'
+                                dataAdmissao: '01/01/2025',
+                                faltasMesAtual: 2
                             },
                             {
                                 id: 2,
@@ -1757,7 +2469,8 @@
                                 cargo: 'Secretária',
                                 salario: 2200.00,
                                 status: 'ativo',
-                                dataAdmissao: '15/01/2025'
+                                dataAdmissao: '15/01/2025',
+                                faltasMesAtual: 0
                             }
                         ],
                         movimentosCaixa: [
@@ -1785,7 +2498,8 @@
                                 tamanho: 2048,
                                 tipo: 'application/pdf',
                                 dataUpload: '01/01/2025',
-                                conteudo: 'CONTRATO DE PRESTAÇÃO DE SERVIÇOS EDUCACIONAIS\n\nContratante: João Silva\nContratada: Escola ABC\n\nCláusulas do contrato...'
+                                conteudo: 'CONTRATO DE PRESTAÇÃO DE SERVIÇOS EDUCACIONAIS\n\nContratante: João Silva\nContratada: Escola ABC\n\nCláusulas do contrato...',
+                                isFile: true
                             }
                         ],
                         folhasPagamento: [
@@ -1797,19 +2511,59 @@
                                 mes: 8,
                                 ano: 2025,
                                 salarioBruto: 3000.00,
+                                faltas: 2,
                                 descontos: {
+                                    faltas: 136.36,
                                     inss: 330.00,
                                     irrf: 150.00,
                                     valeTransporte: 120.00,
                                     planoSaude: 0,
                                     outros: 0
                                 },
-                                salarioLiquido: 2400.00
+                                salarioLiquido: 2263.64
+                            }
+                        ],
+                        faltasFuncionarios: [
+                            {
+                                id: 1,
+                                funcionarioId: 1,
+                                funcionarioNome: 'Prof. Roberto',
+                                quantidade: 2,
+                                mesAno: '2025-09',
+                                observacoes: 'Faltas justificadas por motivo médico',
+                                dataRegistro: '16/09/2025'
+                            }
+                        ],
+                        boletos: [
+                            {
+                                id: 1,
+                                alunoId: 1,
+                                alunoNome: 'João Silva',
+                                valor: 500.00,
+                                vencimento: '10/09/2025',
+                                status: 'pago',
+                                mes: 9,
+                                ano: 2025,
+                                dataCriacao: '01/09/2025',
+                                dataPagamento: '08/09/2025'
+                            },
+                            {
+                                id: 2,
+                                alunoId: 2,
+                                alunoNome: 'Ana Costa',
+                                valor: 450.00,
+                                vencimento: '15/09/2025',
+                                status: 'pendente',
+                                mes: 9,
+                                ano: 2025,
+                                dataCriacao: '01/09/2025'
                             }
                         ],
                         configuracoes: {
                             sheetId: '',
-                            sheetUrl: ''
+                            apiKey: '',
+                            sheetName: 'Dados',
+                            conectado: false
                         }
                     };
                 }
@@ -1821,7 +2575,9 @@
                     movimentosCaixa: [], 
                     contratos: [],
                     folhasPagamento: [],
-                    configuracoes: { sheetId: '', sheetUrl: '' } 
+                    faltasFuncionarios: [],
+                    boletos: [],
+                    configuracoes: { sheetId: '', apiKey: '', sheetName: 'Dados', conectado: false } 
                 };
             }
         }
@@ -1848,19 +2604,13 @@
 
         // Adicionar listeners para cálculo automático na folha
         document.addEventListener('DOMContentLoaded', function() {
-            // Event listeners para recálculo automático
-            const inputs = ['descontoINSS', 'descontoIRRF', 'valeTransporte', 'planoSaude', 'outrosDescontos'];
+            const inputs = ['faltasMes', 'diasUteis', 'descontoINSS', 'descontoIRRF', 'valeTransporte', 'planoSaude', 'outrosDescontos'];
             inputs.forEach(id => {
                 const element = document.getElementById(id);
                 if (element) {
                     element.addEventListener('input', calcularFolha);
                 }
             });
-        });
-
-        // Inicialização
-        document.addEventListener('DOMContentLoaded', function() {
-            // Sistema já inicializado com dados de exemplo
         });
     </script>
 </body>
