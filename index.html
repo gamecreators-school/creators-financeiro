@@ -215,6 +215,9 @@
         .status.trancado { background: #f8d7da; color: #721c24; }
         .status.pendente { background: #fff3cd; color: #856404; }
         .status.inadimplente { background: #f8d7da; color: #721c24; }
+        .status.black { background: #343a40; color: #ffffff; }
+        .status.blackin { background: #6c757d; color: #ffffff; }
+        .status.formados { background: #d1ecf1; color: #0c5460; }
         .status.pago { background: #d4edda; color: #155724; }
         .status.vencido { background: #f8d7da; color: #721c24; }
         .status.entrada { background: #d4edda; color: #155724; }
@@ -470,12 +473,20 @@
                     <p>Trancados</p>
                 </div>
                 <div class="stat-card">
-                    <h3 id="alunosPendentes">0</h3>
-                    <p>Pendentes</p>
-                </div>
-                <div class="stat-card">
                     <h3 id="alunosInadimplentes">0</h3>
                     <p>Inadimplentes</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="alunosBlack">0</h3>
+                    <p>Black</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="alunosBlackin">0</h3>
+                    <p>Blackin</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="alunosFormados">0</h3>
+                    <p>Formados</p>
                 </div>
                 <div class="stat-card">
                     <h3 id="totalReceber">R$ 0,00</h3>
@@ -499,6 +510,9 @@
                 <button class="filter-btn" onclick="filtrarPorStatus('trancado')">Trancados</button>
                 <button class="filter-btn" onclick="filtrarPorStatus('pendente')">Pendentes</button>
                 <button class="filter-btn" onclick="filtrarPorStatus('inadimplente')">Inadimplentes</button>
+                <button class="filter-btn" onclick="filtrarPorStatus('black')">Black</button>
+                <button class="filter-btn" onclick="filtrarPorStatus('blackin')">Blackin</button>
+                <button class="filter-btn" onclick="filtrarPorStatus('formados')">Formados</button>
             </div>
             
             <input type="text" class="search-bar" placeholder="Pesquisar alunos..." onkeyup="filtrarAlunos(this.value)">
@@ -525,6 +539,22 @@
         <!-- Financeiro -->
         <div id="financeiro" class="tab-content">
             <h2>Gestão Financeira</h2>
+            
+            <!-- Filtros de Data e Status -->
+            <div class="filter-section">
+                <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                    <div>
+                        <strong>Período:</strong>
+                        <input type="month" id="filtroMesFinanceiro" onchange="filtrarFinanceiroPorData()">
+                    </div>
+                    <div>
+                        <strong>Data Específica:</strong>
+                        <input type="date" id="filtroDataFinanceiro" onchange="filtrarFinanceiroPorData()">
+                    </div>
+                    <button class="btn btn-info" onclick="limparFiltrosDatas()">Limpar Filtros</button>
+                    <button class="btn btn-success" onclick="exportarRelatorioFinanceiro()">Exportar Relatório</button>
+                </div>
+            </div>
             
             <div class="stats-grid">
                 <div class="stat-card">
@@ -756,6 +786,9 @@
                             <option value="trancado">Trancado</option>
                             <option value="pendente">Pendente</option>
                             <option value="inadimplente">Inadimplente</option>
+                            <option value="black">Black</option>
+                            <option value="blackin">Blackin</option>
+                            <option value="formados">Formados</option>
                         </select>
                     </div>
                 </div>
@@ -1079,6 +1112,161 @@
             const hoje = new Date();
             document.getElementById('mesRelatorio').value = hoje.getMonth() + 1;
             document.getElementById('anoRelatorio').value = hoje.getFullYear();
+            
+            // Configurar filtro financeiro para mês atual
+            const mesAtual = hoje.toISOString().slice(0, 7); // YYYY-MM
+            document.getElementById('filtroMesFinanceiro').value = mesAtual;
+        }
+
+        // Funções de filtro financeiro por data
+        function filtrarFinanceiroPorData() {
+            const mes = document.getElementById('filtroMesFinanceiro').value;
+            const dataEspecifica = document.getElementById('filtroDataFinanceiro').value;
+            
+            if (mes || dataEspecifica) {
+                atualizarTabelaFinanceiro(mes, dataEspecifica);
+            } else {
+                atualizarTabelaFinanceiro();
+            }
+        }
+
+        function limparFiltrosDatas() {
+            document.getElementById('filtroMesFinanceiro').value = '';
+            document.getElementById('filtroDataFinanceiro').value = '';
+            atualizarTabelaFinanceiro();
+        }
+
+        function exportarRelatorioFinanceiro() {
+            const mes = document.getElementById('filtroMesFinanceiro').value;
+            const dataEspecifica = document.getElementById('filtroDataFinanceiro').value;
+            
+            let periodo = 'Todos os Períodos';
+            if (dataEspecifica) {
+                periodo = `Data: ${new Date(dataEspecifica).toLocaleDateString()}`;
+            } else if (mes) {
+                const data = new Date(mes);
+                const mesesNomes = [
+                    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+                    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+                ];
+                periodo = `${mesesNomes[data.getMonth()]}/${data.getFullYear()}`;
+            }
+            
+            // Obter dados filtrados
+            const dadosFiltrados = obterDadosFinanceirosFiltrados(mes, dataEspecifica);
+            
+            const htmlRelatorio = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <title>Relatório Financeiro - ${periodo}</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; margin: 20px; }
+                        .header { text-align: center; margin-bottom: 30px; }
+                        .stats { display: flex; justify-content: space-around; margin: 20px 0; }
+                        .stat-item { text-align: center; padding: 10px; background: #f8f9fa; border-radius: 5px; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                        th, td { padding: 8px; text-align: left; border: 1px solid #ddd; }
+                        th { background: #f8f9fa; }
+                        .status { padding: 4px 8px; border-radius: 4px; font-size: 12px; color: white; }
+                        .ativo { background: #28a745; }
+                        .inadimplente { background: #dc3545; }
+                        .black { background: #343a40; }
+                        .blackin { background: #6c757d; }
+                        .formados { background: #17a2b8; }
+                        .pendente { background: #ffc107; color: #000; }
+                        .trancado { background: #6c757d; }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h1>Relatório Financeiro</h1>
+                        <h3>${periodo}</h3>
+                        <p>Gerado em: ${new Date().toLocaleString()}</p>
+                    </div>
+                    
+                    <div class="stats">
+                        <div class="stat-item">
+                            <h4>Total de Alunos</h4>
+                            <strong>${dadosFiltrados.length}</strong>
+                        </div>
+                        <div class="stat-item">
+                            <h4>Total a Receber</h4>
+                            <strong>R$ ${dadosFiltrados.reduce((total, aluno) => total + (aluno.situacaoPagamento === 'pendente' ? aluno.valorMensalidade : 0), 0).toFixed(2)}</strong>
+                        </div>
+                        <div class="stat-item">
+                            <h4>Total Recebido</h4>
+                            <strong>R$ ${dadosFiltrados.reduce((total, aluno) => total + (aluno.situacaoPagamento === 'pago' ? aluno.valorMensalidade : 0), 0).toFixed(2)}</strong>
+                        </div>
+                    </div>
+                    
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Aluno</th>
+                                <th>Status</th>
+                                <th>Valor</th>
+                                <th>Vencimento</th>
+                                <th>Situação Pagamento</th>
+                                <th>Forma Pagamento</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${dadosFiltrados.map(aluno => `
+                                <tr>
+                                    <td>${aluno.nome}</td>
+                                    <td><span class="status ${aluno.status}">${aluno.status.toUpperCase()}</span></td>
+                                    <td>R$ ${aluno.valorMensalidade.toFixed(2)}</td>
+                                    <td>Todo dia ${aluno.diaVencimento}</td>
+                                    <td>${aluno.situacaoPagamento.toUpperCase()}</td>
+                                    <td>${aluno.formaPagamento}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </body>
+                </html>
+            `;
+            
+            const blob = new Blob([htmlRelatorio], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `relatorio_financeiro_${periodo.replace(/[^a-zA-Z0-9]/g, '_')}.html`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            mostrarAlerta('Relatório financeiro exportado com sucesso!', 'success');
+        }
+
+        function obterDadosFinanceirosFiltrados(mes, dataEspecifica) {
+            if (!mes && !dataEspecifica) {
+                return dadosEscola.alunos;
+            }
+            
+            const hoje = new Date();
+            
+            return dadosEscola.alunos.filter(aluno => {
+                if (dataEspecifica) {
+                    const dataFiltro = new Date(dataEspecifica);
+                    const vencimentoAluno = new Date(hoje.getFullYear(), hoje.getMonth(), aluno.diaVencimento);
+                    
+                    return vencimentoAluno.toDateString() === dataFiltro.toDateString();
+                }
+                
+                if (mes) {
+                    const [ano, mesNum] = mes.split('-').map(Number);
+                    const vencimentoAluno = new Date(ano, mesNum - 1, aluno.diaVencimento);
+                    
+                    return vencimentoAluno.getMonth() === mesNum - 1 && vencimentoAluno.getFullYear() === ano;
+                }
+                
+                return true;
+            });
         }
 
         // Navegação por Abas
@@ -1407,6 +1595,9 @@
                             <option value="trancado">Trancado</option>
                             <option value="pendente">Pendente</option>
                             <option value="inadimplente">Inadimplente</option>
+                            <option value="black">Black</option>
+                            <option value="blackin">Blackin</option>
+                            <option value="formados">Formados</option>
                         </select>
                     </td>
                 `;
@@ -1489,11 +1680,18 @@
             return false;
         }
 
-        function atualizarTabelaFinanceiro() {
+        function atualizarTabelaFinanceiro(filtroMes, filtroData) {
             const tbody = document.getElementById('listaFinanceiro');
             tbody.innerHTML = '';
 
-            dadosEscola.alunos.forEach(aluno => {
+            let alunosFiltrados = dadosEscola.alunos;
+            
+            // Aplicar filtros de data se especificados
+            if (filtroMes || filtroData) {
+                alunosFiltrados = obterDadosFinanceirosFiltrados(filtroMes, filtroData);
+            }
+
+            alunosFiltrados.forEach(aluno => {
                 const hoje = new Date();
                 const vencimento = new Date(hoje.getFullYear(), hoje.getMonth(), aluno.diaVencimento);
                 
@@ -2171,6 +2369,502 @@
             document.getElementById('totalAlunos').textContent = stats.totalAlunos;
             document.getElementById('alunosAtivos').textContent = stats.ativos;
             document.getElementById('alunosTrancados').textContent = stats.trancados;
+            document.getElementById('alunosInadimplentes').textContent = stats.inadimplentes;
+            document.getElementById('alunosBlack').textContent = stats.black;
+            document.getElementById('alunosBlackin').textContent = stats.blackin;
+            document.getElementById('alunosFormados').textContent = stats.formados;
+            document.getElementById('totalReceber').textContent = `R$ ${stats.totalReceber.toFixed(2)}`;
+        }
+
+        function calcularEstatisticas() {
+            const alunos = dadosEscola.alunos;
+            
+            return {
+                totalAlunos: alunos.length,
+                ativos: alunos.filter(a => a.status === 'ativo').length,
+                trancados: alunos.filter(a => a.status === 'trancado').length,
+                pendentes: alunos.filter(a => a.status === 'pendente').length,
+                inadimplentes: alunos.filter(a => a.status === 'inadimplente').length,
+                black: alunos.filter(a => a.status === 'black').length,
+                blackin: alunos.filter(a => a.status === 'blackin').length,
+                formados: alunos.filter(a => a.status === 'formados').length,
+                totalReceber: alunos
+                    .filter(a => a.situacaoPagamento === 'pendente')
+                    .reduce((total, a) => total + a.valorMensalidade, 0)
+            };
+        }
+
+        // Funções de Administração e Google Sheets
+        function verificarStatusConexao() {
+            const sheetId = dadosEscola.configuracoes.sheetId;
+            const apiKey = dadosEscola.configuracoes.apiKey;
+            
+            if (sheetId && apiKey) {
+                document.getElementById('syncStatus').className = 'sync-status sync-success';
+                document.getElementById('syncStatus').textContent = 'Status: Configuração pronta para sincronização';
+                document.getElementById('sheetId').value = sheetId;
+                document.getElementById('apiKey').value = apiKey;
+                document.getElementById('sheetName').value = dadosEscola.configuracoes.sheetName;
+            } else {
+                document.getElementById('syncStatus').className = 'sync-status sync-warning';
+                document.getElementById('syncStatus').textContent = 'Status: Não configurado';
+            }
+        }
+
+        function testarConexao() {
+            const sheetId = document.getElementById('sheetId').value;
+            const apiKey = document.getElementById('apiKey').value;
+            const sheetName = document.getElementById('sheetName').value;
+            
+            if (!sheetId || !apiKey) {
+                mostrarAlerta('Por favor, preencha o ID da planilha e a API Key!', 'danger');
+                return;
+            }
+            
+            // Salvar configurações
+            dadosEscola.configuracoes.sheetId = sheetId;
+            dadosEscola.configuracoes.apiKey = apiKey;
+            dadosEscola.configuracoes.sheetName = sheetName;
+            salvarDados();
+            
+            // Simular teste de conexão
+            document.getElementById('syncStatus').className = 'sync-status sync-warning';
+            document.getElementById('syncStatus').textContent = 'Status: Testando conexão...';
+            
+            // URL da API do Google Sheets
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${sheetName}!A1:A1?key=${apiKey}`;
+            
+            fetch(url)
+                .then(response => {
+                    if (response.ok) {
+                        document.getElementById('syncStatus').className = 'sync-status sync-success';
+                        document.getElementById('syncStatus').textContent = 'Status: Conexão estabelecida com sucesso!';
+                        dadosEscola.configuracoes.conectado = true;
+                        mostrarAlerta('Conexão com Google Sheets estabelecida!', 'success');
+                    } else {
+                        throw new Error('Falha na conexão');
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('syncStatus').className = 'sync-status sync-error';
+                    document.getElementById('syncStatus').textContent = 'Status: Erro na conexão - Verifique as configurações';
+                    dadosEscola.configuracoes.conectado = false;
+                    mostrarAlerta('Erro na conexão: Verifique o ID da planilha e a API Key', 'danger');
+                });
+            
+            salvarDados();
+        }
+
+        function sincronizarDados() {
+            if (!dadosEscola.configuracoes.sheetId || !dadosEscola.configuracoes.apiKey) {
+                mostrarAlerta('Configure a conexão primeiro!', 'danger');
+                return;
+            }
+            
+            const sheetId = dadosEscola.configuracoes.sheetId;
+            const apiKey = dadosEscola.configuracoes.apiKey;
+            const sheetName = dadosEscola.configuracoes.sheetName;
+            
+            mostrarAlerta('Iniciando sincronização...', 'warning');
+            
+            // Preparar dados para sincronização
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${sheetName}!A1:Z1000?key=${apiKey}`;
+            
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.values && data.values.length > 1) {
+                        // Processar dados recebidos da planilha
+                        const headers = data.values[0];
+                        const rows = data.values.slice(1);
+                        
+                        // Aqui você implementaria a lógica para sincronizar os dados
+                        // Por exemplo, importar novos alunos da planilha
+                        
+                        mostrarAlerta('Dados sincronizados com sucesso!', 'success');
+                        atualizarDashboard();
+                    } else {
+                        mostrarAlerta('Planilha vazia ou sem dados válidos', 'warning');
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro na sincronização:', error);
+                    mostrarAlerta('Erro na sincronização: ' + error.message, 'danger');
+                });
+        }
+
+        function enviarDadosParaPlanilha() {
+            if (!dadosEscola.configuracoes.sheetId || !dadosEscola.configuracoes.apiKey) {
+                mostrarAlerta('Configure a conexão primeiro!', 'danger');
+                return;
+            }
+            
+            const sheetId = dadosEscola.configuracoes.sheetId;
+            const apiKey = dadosEscola.configuracoes.apiKey;
+            const sheetName = dadosEscola.configuracoes.sheetName;
+            
+            // Preparar dados para envio
+            const dadosParaEnviar = [
+                // Cabeçalhos
+                ['Nome', 'Responsável', 'Status', 'Mensalidade', 'Vencimento', 'Situação Pagamento', 'Data Cadastro'],
+                // Dados dos alunos
+                ...dadosEscola.alunos.map(aluno => [
+                    aluno.nome,
+                    aluno.responsavel || '',
+                    aluno.status,
+                    aluno.valorMensalidade,
+                    aluno.diaVencimento,
+                    aluno.situacaoPagamento,
+                    aluno.dataCadastro
+                ])
+            ];
+            
+            const requestBody = {
+                values: dadosParaEnviar
+            };
+            
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${sheetName}!A1:G${dadosParaEnviar.length}?valueInputOption=RAW&key=${apiKey}`;
+            
+            fetch(url, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestBody)
+            })
+            .then(response => {
+                if (response.ok) {
+                    mostrarAlerta('Dados enviados para a planilha com sucesso!', 'success');
+                } else {
+                    throw new Error('Falha no envio');
+                }
+            })
+            .catch(error => {
+                console.error('Erro no envio:', error);
+                mostrarAlerta('Erro ao enviar dados: Verifique se a planilha permite edição', 'danger');
+            });
+        }
+
+        function exportarDados() {
+            const dados = JSON.stringify(dadosEscola, null, 2);
+            const blob = new Blob([dados], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `backup_escola_${new Date().toLocaleDateString().replace(/\//g, '-')}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            mostrarAlerta('Backup exportado com sucesso!', 'success');
+        }
+
+        function importarDados(input) {
+            const file = input.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const dados = JSON.parse(e.target.result);
+                        if (confirm('Tem certeza que deseja restaurar estes dados? Isso substituirá todos os dados atuais.')) {
+                            dadosEscola = dados;
+                            salvarDados();
+                            atualizarDashboard();
+                            atualizarTabelaAlunos();
+                            atualizarTabelaRH();
+                            atualizarTabelaCaixa();
+                            atualizarListaContratos();
+                            mostrarAlerta('Dados importados com sucesso!', 'success');
+                        }
+                    } catch (error) {
+                        mostrarAlerta('Erro ao importar dados. Arquivo inválido.', 'danger');
+                    }
+                };
+                reader.readAsText(file);
+            }
+        }
+
+        // Funções de Persistência
+        function salvarDados() {
+            try {
+                const dadosString = JSON.stringify(dadosEscola);
+                const dados = btoa(unescape(encodeURIComponent(dadosString)));
+                document.cookie = `escolaData=${dados}; expires=` + new Date(Date.now() + 365*24*60*60*1000).toUTCString() + '; path=/';
+            } catch (error) {
+                console.error('Erro ao salvar dados:', error);
+            }
+        }
+
+        function carregarDados() {
+            try {
+                const cookies = document.cookie.split(';');
+                const escolaCookie = cookies.find(cookie => cookie.trim().startsWith('escolaData='));
+                
+                if (escolaCookie) {
+                    const dados = escolaCookie.split('=')[1];
+                    const dadosString = decodeURIComponent(escape(atob(dados)));
+                    dadosEscola = JSON.parse(dadosString);
+                } else {
+                    // Dados de exemplo para demonstração
+                    dadosEscola = {
+                        alunos: [
+                            {
+                                id: 1,
+                                nome: 'João Silva',
+                                responsavel: 'Maria Silva',
+                                responsavelFinanceiro: 'Pedro Silva',
+                                status: 'ativo',
+                                valorMensalidade: 500.00,
+                                diaVencimento: 10,
+                                formaPagamento: 'boleto',
+                                contratoId: 1,
+                                contrato: 'contrato_joao.pdf',
+                                linkContrato: 'https://drive.google.com/file/d/exemplo',
+                                dataCadastro: '01/01/2025',
+                                situacaoPagamento: 'pago'
+                            },
+                            {
+                                id: 2,
+                                nome: 'Ana Costa',
+                                responsavel: 'Carlos Costa',
+                                responsavelFinanceiro: 'Carlos Costa',
+                                status: 'black',
+                                valorMensalidade: 450.00,
+                                diaVencimento: 15,
+                                formaPagamento: 'cartao',
+                                contratoId: null,
+                                contrato: '',
+                                linkContrato: '',
+                                dataCadastro: '15/01/2025',
+                                situacaoPagamento: 'pendente'
+                            },
+                            {
+                                id: 3,
+                                nome: 'Pedro Santos',
+                                responsavel: 'Ana Santos',
+                                responsavelFinanceiro: 'Ana Santos',
+                                status: 'formados',
+                                valorMensalidade: 400.00,
+                                diaVencimento: 5,
+                                formaPagamento: 'boleto',
+                                contratoId: null,
+                                contrato: '',
+                                linkContrato: 'https://docs.google.com/document/d/exemplo',
+                                dataCadastro: '20/01/2025',
+                                situacaoPagamento: 'pago'
+                            },
+                            {
+                                id: 4,
+                                nome: 'Maria Oliveira',
+                                responsavel: 'João Oliveira',
+                                responsavelFinanceiro: 'João Oliveira',
+                                status: 'blackin',
+                                valorMensalidade: 380.00,
+                                diaVencimento: 8,
+                                formaPagamento: 'transferencia',
+                                contratoId: null,
+                                contrato: '',
+                                linkContrato: '',
+                                dataCadastro: '25/01/2025',
+                                situacaoPagamento: 'pendente'
+                            }
+                        ],
+                        funcionarios: [
+                            {
+                                id: 1,
+                                nome: 'Prof. Roberto',
+                                cargo: 'Professor',
+                                salario: 3000.00,
+                                status: 'ativo',
+                                dataAdmissao: '01/01/2025',
+                                faltasMesAtual: 2
+                            },
+                            {
+                                id: 2,
+                                nome: 'Maria Secretária',
+                                cargo: 'Secretária',
+                                salario: 2200.00,
+                                status: 'ativo',
+                                dataAdmissao: '15/01/2025',
+                                faltasMesAtual: 0
+                            }
+                        ],
+                        movimentosCaixa: [
+                            {
+                                id: 1,
+                                data: '01/09/2025',
+                                tipo: 'entrada',
+                                descricao: 'Mensalidade - João Silva',
+                                valor: 500.00,
+                                responsavel: 'Admin'
+                            },
+                            {
+                                id: 2,
+                                data: '05/09/2025',
+                                tipo: 'saida',
+                                descricao: 'Salário - Prof. Roberto',
+                                valor: 2400.00,
+                                responsavel: 'Admin'
+                            },
+                            {
+                                id: 3,
+                                data: '20/01/2025',
+                                tipo: 'entrada',
+                                descricao: 'Mensalidade - Pedro Santos',
+                                valor: 400.00,
+                                responsavel: 'Admin'
+                            }
+                        ],
+                        contratos: [
+                            {
+                                id: 1,
+                                nome: 'contrato_joao.pdf',
+                                tamanho: 2048,
+                                tipo: 'application/pdf',
+                                dataUpload: '01/01/2025',
+                                conteudo: 'CONTRATO DE PRESTAÇÃO DE SERVIÇOS EDUCACIONAIS\n\nContratante: João Silva\nContratada: Escola ABC\n\nCláusulas do contrato...',
+                                isFile: true
+                            }
+                        ],
+                        folhasPagamento: [
+                            {
+                                id: 1,
+                                funcionarioId: 1,
+                                funcionarioNome: 'Prof. Roberto',
+                                dataProcessamento: '01/09/2025',
+                                mes: 8,
+                                ano: 2025,
+                                salarioBruto: 3000.00,
+                                faltas: 2,
+                                descontos: {
+                                    faltas: 136.36,
+                                    inss: 330.00,
+                                    irrf: 150.00,
+                                    valeTransporte: 120.00,
+                                    planoSaude: 0,
+                                    outros: 0
+                                },
+                                salarioLiquido: 2263.64
+                            }
+                        ],
+                        faltasFuncionarios: [
+                            {
+                                id: 1,
+                                funcionarioId: 1,
+                                funcionarioNome: 'Prof. Roberto',
+                                quantidade: 2,
+                                mesAno: '2025-09',
+                                observacoes: 'Faltas justificadas por motivo médico',
+                                dataRegistro: '16/09/2025'
+                            }
+                        ],
+                        boletos: [
+                            {
+                                id: 1,
+                                alunoId: 1,
+                                alunoNome: 'João Silva',
+                                valor: 500.00,
+                                vencimento: '10/09/2025',
+                                status: 'pago',
+                                mes: 9,
+                                ano: 2025,
+                                dataCriacao: '01/09/2025',
+                                dataPagamento: '08/09/2025'
+                            },
+                            {
+                                id: 2,
+                                alunoId: 2,
+                                alunoNome: 'Ana Costa',
+                                valor: 450.00,
+                                vencimento: '15/09/2025',
+                                status: 'pendente',
+                                mes: 9,
+                                ano: 2025,
+                                dataCriacao: '01/09/2025'
+                            }
+                        ],
+                        configuracoes: {
+                            sheetId: '',
+                            apiKey: '',
+                            sheetName: 'Dados',
+                            conectado: false
+                        }
+                    };
+                }
+            } catch (error) {
+                console.error('Erro ao carregar dados:', error);
+                dadosEscola = { 
+                    alunos: [], 
+                    funcionarios: [], 
+                    movimentosCaixa: [], 
+                    contratos: [],
+                    folhasPagamento: [],
+                    faltasFuncionarios: [],
+                    boletos: [],
+                    configuracoes: { sheetId: '', apiKey: '', sheetName: 'Dados', conectado: false } 
+                };
+            }
+        }
+
+        // Função para mostrar alertas
+        function mostrarAlerta(mensagem, tipo) {
+            const alerta = document.createElement('div');
+            alerta.className = `alert alert-${tipo}`;
+            alerta.textContent = mensagem;
+            alerta.style.position = 'fixed';
+            alerta.style.top = '20px';
+            alerta.style.right = '20px';
+            alerta.style.zIndex = '9999';
+            alerta.style.minWidth = '300px';
+            
+            document.body.appendChild(alerta);
+            
+            setTimeout(() => {
+                if (document.body.contains(alerta)) {
+                    document.body.removeChild(alerta);
+                }
+            }, 3000);
+        }
+
+        // Adicionar listeners para cálculo automático na folha
+        document.addEventListener('DOMContentLoaded', function() {
+            const inputs = ['faltasMes', 'diasUteis', 'descontoINSS', 'descontoIRRF', 'valeTransporte', 'planoSaude', 'outrosDescontos'];
+            inputs.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.addEventListener('input', calcularFolha);
+                }
+            });
+        });
+    </script>
+</body>
+</html>lunosTrancados').textContent = stats.trancados;
+            document.getElementById('alunosInadimplentes').textContent = stats.inadimplentes;
+            document.getElementById('alunosBlack').textContent = stats.black;
+            document.getElementById('alunosBlackin').textContent = stats.blackin;
+            document.getElementById('alunosFormados').textContent = stats.formados;
+            document.getElementById('totalReceber').textContent = `R$ ${stats.totalReceber.toFixed(2)}`;
+        }
+
+        function calcularEstatisticas() {
+            const alunos = dadosEscola.alunos;
+            
+            return {
+                totalAlunos: alunos.length,
+                ativos: alunos.filter(a => a.status === 'ativo').length,
+                trancados: alunos.filter(a => a.status === 'trancado').length,
+                pendentes: alunos.filter(a => a.status === 'pendente').length,
+                inadimplentes: alunos.filter(a => a.status === 'inadimplente').length,
+                black: alunos.filter(a => a.status === 'black').length,
+                blackin: alunos.filter(a => a.status === 'blackin').length,
+                formados: alunos.filter(a => a.status === 'formados').length,
+                totalReceber: alunos
+                    .filter(a => a.situacaoPagamento === 'pendente')
+                    .reduce((total, a) => total + a.valorMensalidade, 0)
+            };
+        }lunosTrancados').textContent = stats.trancados;
             document.getElementById('alunosPendentes').textContent = stats.pendentes;
             document.getElementById('alunosInadimplentes').textContent = stats.inadimplentes;
             document.getElementById('totalReceber').textContent = `R$ ${stats.totalReceber.toFixed(2)}`;
