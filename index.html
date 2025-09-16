@@ -283,6 +283,63 @@
         .alert-danger { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
         .alert-warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
 
+        .filter-section {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            border: 2px solid #ddd;
+            border-radius: 20px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+
+        .filter-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .contracts-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .contract-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            background: white;
+        }
+
+        .payroll-history {
+            margin-top: 20px;
+        }
+
+        .payroll-item {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 10px;
+            background: #f9f9f9;
+        }
+
         @media (max-width: 768px) {
             .nav-tabs {
                 flex-direction: column;
@@ -294,6 +351,11 @@
 
             .stats-grid {
                 grid-template-columns: repeat(2, 1fr);
+            }
+
+            .filter-section {
+                flex-direction: column;
+                align-items: stretch;
             }
         }
 
@@ -339,6 +401,7 @@
             <button class="tab" onclick="showTab('financeiro')">Financeiro</button>
             <button class="tab" onclick="showTab('rh')">RH</button>
             <button class="tab" onclick="showTab('caixa')">Caixa</button>
+            <button class="tab" onclick="showTab('contratos')">Contratos</button>
             <button class="tab" onclick="showTab('admin')">Admin</button>
         </div>
 
@@ -380,6 +443,16 @@
                 <button class="btn btn-success" onclick="showModal('modalAluno')">Novo Aluno</button>
             </div>
             
+            <!-- Filtros de Status -->
+            <div class="filter-section">
+                <strong>Filtrar por Status:</strong>
+                <button class="filter-btn active" onclick="filtrarPorStatus('todos')">Todos</button>
+                <button class="filter-btn" onclick="filtrarPorStatus('ativo')">Ativos</button>
+                <button class="filter-btn" onclick="filtrarPorStatus('trancado')">Trancados</button>
+                <button class="filter-btn" onclick="filtrarPorStatus('pendente')">Pendentes</button>
+                <button class="filter-btn" onclick="filtrarPorStatus('inadimplente')">Inadimplentes</button>
+            </div>
+            
             <input type="text" class="search-bar" placeholder="Pesquisar alunos..." onkeyup="filtrarAlunos(this.value)">
             
             <div class="table-container">
@@ -392,6 +465,7 @@
                             <th>Mensalidade</th>
                             <th>Vencimento</th>
                             <th>Situação Pagamento</th>
+                            <th>Contrato</th>
                             <th>Ações</th>
                         </tr>
                     </thead>
@@ -502,6 +576,18 @@
                     </thead>
                     <tbody id="listaCaixa"></tbody>
                 </table>
+            </div>
+        </div>
+
+        <!-- Nova Aba Contratos -->
+        <div id="contratos" class="tab-content">
+            <h2>Gerenciamento de Contratos</h2>
+            
+            <div class="contracts-section">
+                <h3>Contratos Armazenados</h3>
+                <div id="listaContratos">
+                    <!-- Lista de contratos será preenchida via JavaScript -->
+                </div>
             </div>
         </div>
 
@@ -634,6 +720,55 @@
         </div>
     </div>
 
+    <!-- Modal Folha de Pagamento -->
+    <div id="modalFolha" class="modal">
+        <div class="modal-content">
+            <h3>Folha de Pagamento</h3>
+            <form onsubmit="return processarFolha(event)">
+                <div id="dadosFuncionarioFolha"></div>
+                
+                <h4>Descontos</h4>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>INSS (%):</label>
+                        <input type="number" id="descontoINSS" step="0.01" value="11" max="20">
+                    </div>
+                    <div class="form-group">
+                        <label>IRRF (%):</label>
+                        <input type="number" id="descontoIRRF" step="0.01" value="0" max="27.5">
+                    </div>
+                </div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Vale Transporte:</label>
+                        <input type="number" id="valeTransporte" step="0.01" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Plano de Saúde:</label>
+                        <input type="number" id="planoSaude" step="0.01" value="0">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Outros Descontos:</label>
+                    <input type="number" id="outrosDescontos" step="0.01" value="0">
+                </div>
+                
+                <div id="calculoFolha" style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 15px 0;">
+                    <h4>Resumo dos Cálculos</h4>
+                    <p><strong>Salário Bruto:</strong> <span id="salarioBruto">R$ 0,00</span></p>
+                    <p><strong>Total Descontos:</strong> <span id="totalDescontos">R$ 0,00</span></p>
+                    <p><strong>Salário Líquido:</strong> <span id="salarioLiquido">R$ 0,00</span></p>
+                </div>
+                
+                <div style="text-align: center; margin-top: 20px;">
+                    <button type="button" class="btn btn-info" onclick="calcularFolha()">Calcular</button>
+                    <button type="submit" class="btn btn-success">Gerar Folha</button>
+                    <button type="button" class="btn" onclick="closeModal('modalFolha')">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Modal Entrada -->
     <div id="modalEntrada" class="modal">
         <div class="modal-content">
@@ -676,12 +811,27 @@
         </div>
     </div>
 
+    <!-- Modal Visualizar Contrato -->
+    <div id="modalContrato" class="modal">
+        <div class="modal-content">
+            <h3>Visualizar Contrato</h3>
+            <div id="conteudoContrato">
+                <!-- Conteúdo do contrato será carregado aqui -->
+            </div>
+            <div style="text-align: center; margin-top: 20px;">
+                <button class="btn" onclick="closeModal('modalContrato')">Fechar</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Dados do sistema (simulando banco de dados)
         let dadosEscola = {
             alunos: [],
             funcionarios: [],
             movimentosCaixa: [],
+            contratos: [],
+            folhasPagamento: [],
             configuracoes: {
                 sheetId: '',
                 sheetUrl: ''
@@ -689,6 +839,7 @@
         };
 
         let usuarioAtual = null;
+        let filtroStatusAtivo = 'todos';
 
         // Sistema de Login
         function handleLogin(event) {
@@ -760,6 +911,9 @@
                 case 'caixa':
                     atualizarTabelaCaixa();
                     break;
+                case 'contratos':
+                    atualizarListaContratos();
+                    break;
             }
         }
 
@@ -782,9 +936,52 @@
             }
         }
 
+        // Funções de Filtro por Status
+        function filtrarPorStatus(status) {
+            filtroStatusAtivo = status;
+            
+            // Atualizar botões de filtro
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Filtrar tabela
+            const linhas = document.querySelectorAll('#listaAlunos tr');
+            linhas.forEach(linha => {
+                if (status === 'todos') {
+                    linha.style.display = '';
+                } else {
+                    const statusAluno = linha.querySelector('.status').textContent.toLowerCase().trim();
+                    if (statusAluno === status) {
+                        linha.style.display = '';
+                    } else {
+                        linha.style.display = 'none';
+                    }
+                }
+            });
+        }
+
         // Funções de Alunos
         function salvarAluno(event) {
             event.preventDefault();
+            
+            const contratoFile = document.getElementById('contratoFile').files[0];
+            let contratoInfo = null;
+            
+            if (contratoFile) {
+                contratoInfo = {
+                    id: Date.now(),
+                    nome: contratoFile.name,
+                    tamanho: contratoFile.size,
+                    tipo: contratoFile.type,
+                    dataUpload: new Date().toLocaleDateString(),
+                    // Em produção, aqui seria o conteúdo real do arquivo
+                    conteudo: `Contrato simulado para ${document.getElementById('nomeAluno').value}`
+                };
+                
+                dadosEscola.contratos.push(contratoInfo);
+            }
             
             const aluno = {
                 id: Date.now(),
@@ -795,7 +992,8 @@
                 valorMensalidade: parseFloat(document.getElementById('valorMensalidade').value),
                 diaVencimento: parseInt(document.getElementById('diaVencimento').value),
                 formaPagamento: document.getElementById('formaPagamento').value,
-                contrato: document.getElementById('contratoNome').textContent,
+                contratoId: contratoInfo ? contratoInfo.id : null,
+                contrato: contratoInfo ? contratoInfo.nome : '',
                 dataCadastro: new Date().toLocaleDateString(),
                 situacaoPagamento: 'pendente'
             };
@@ -895,6 +1093,25 @@
             }
         }
 
+        function visualizarContrato(contratoId) {
+            const contrato = dadosEscola.contratos.find(c => c.id === contratoId);
+            if (contrato) {
+                document.getElementById('conteudoContrato').innerHTML = `
+                    <h4>${contrato.nome}</h4>
+                    <p><strong>Data de Upload:</strong> ${contrato.dataUpload}</p>
+                    <p><strong>Tamanho:</strong> ${(contrato.tamanho / 1024).toFixed(2)} KB</p>
+                    <p><strong>Tipo:</strong> ${contrato.tipo}</p>
+                    <hr>
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 5px;">
+                        ${contrato.conteudo}
+                    </div>
+                `;
+                showModal('modalContrato');
+            } else {
+                mostrarAlerta('Contrato não encontrado!', 'danger');
+            }
+        }
+
         function atualizarTabelaAlunos() {
             const tbody = document.getElementById('listaAlunos');
             tbody.innerHTML = '';
@@ -908,6 +1125,9 @@
                     <td>R$ ${aluno.valorMensalidade.toFixed(2)}</td>
                     <td>Todo dia ${aluno.diaVencimento}</td>
                     <td><span class="status ${aluno.situacaoPagamento}">${aluno.situacaoPagamento.toUpperCase()}</span></td>
+                    <td>
+                        ${aluno.contratoId ? `<button class="btn btn-info" onclick="visualizarContrato(${aluno.contratoId})">Ver Contrato</button>` : 'Sem contrato'}
+                    </td>
                     <td>
                         <button class="btn btn-info" onclick="editarAluno(${aluno.id})">Editar</button>
                         <button class="btn btn-warning" onclick="darBaixaPagamento(${aluno.id})">Dar Baixa</button>
@@ -923,6 +1143,11 @@
                 `;
                 tbody.appendChild(tr);
             });
+            
+            // Aplicar filtro atual
+            if (filtroStatusAtivo !== 'todos') {
+                filtrarPorStatus(filtroStatusAtivo);
+            }
         }
 
         function filtrarAlunos(termo) {
@@ -930,7 +1155,13 @@
             linhas.forEach(linha => {
                 const texto = linha.textContent.toLowerCase();
                 if (texto.includes(termo.toLowerCase())) {
-                    linha.style.display = '';
+                    // Verificar se também passa no filtro de status
+                    if (filtroStatusAtivo === 'todos') {
+                        linha.style.display = '';
+                    } else {
+                        const statusAluno = linha.querySelector('.status').textContent.toLowerCase().trim();
+                        linha.style.display = statusAluno === filtroStatusAtivo ? '' : 'none';
+                    }
                 } else {
                     linha.style.display = 'none';
                 }
@@ -942,7 +1173,6 @@
             if (input.files && input.files[0]) {
                 const file = input.files[0];
                 document.getElementById('contratoNome').textContent = file.name;
-                // Em produção, fazer upload para servidor
                 mostrarAlerta('Contrato carregado: ' + file.name, 'success');
             }
         }
@@ -978,7 +1208,6 @@
         function gerarBoleto(id) {
             const aluno = dadosEscola.alunos.find(a => a.id === id);
             if (aluno) {
-                // Simular geração de boleto
                 mostrarAlerta(`Boleto gerado para ${aluno.nome} - Valor: R$ ${aluno.valorMensalidade.toFixed(2)}`, 'success');
             }
         }
@@ -1076,14 +1305,108 @@
             }
         }
 
+        // Função melhorada para gerar folha de pagamento
+        function gerarFolhaPagamento(id) {
+            const funcionario = dadosEscola.funcionarios.find(f => f.id === id);
+            if (funcionario) {
+                // Preencher dados do funcionário
+                document.getElementById('dadosFuncionarioFolha').innerHTML = `
+                    <h4>${funcionario.nome}</h4>
+                    <p><strong>Cargo:</strong> ${funcionario.cargo}</p>
+                    <p><strong>Salário Bruto:</strong> R$ ${funcionario.salario.toFixed(2)}</p>
+                `;
+                
+                // Definir dados no modal
+                window.funcionarioFolhaAtual = funcionario;
+                
+                // Calcular automaticamente
+                calcularFolha();
+                
+                showModal('modalFolha');
+            }
+        }
+
+        function calcularFolha() {
+            if (!window.funcionarioFolhaAtual) return;
+            
+            const salarioBruto = window.funcionarioFolhaAtual.salario;
+            const descontoINSS = (parseFloat(document.getElementById('descontoINSS').value) || 0) / 100 * salarioBruto;
+            const descontoIRRF = (parseFloat(document.getElementById('descontoIRRF').value) || 0) / 100 * salarioBruto;
+            const valeTransporte = parseFloat(document.getElementById('valeTransporte').value) || 0;
+            const planoSaude = parseFloat(document.getElementById('planoSaude').value) || 0;
+            const outrosDescontos = parseFloat(document.getElementById('outrosDescontos').value) || 0;
+            
+            const totalDescontos = descontoINSS + descontoIRRF + valeTransporte + planoSaude + outrosDescontos;
+            const salarioLiquido = salarioBruto - totalDescontos;
+            
+            document.getElementById('salarioBruto').textContent = `R$ ${salarioBruto.toFixed(2)}`;
+            document.getElementById('totalDescontos').textContent = `R$ ${totalDescontos.toFixed(2)}`;
+            document.getElementById('salarioLiquido').textContent = `R$ ${salarioLiquido.toFixed(2)}`;
+        }
+
+        function processarFolha(event) {
+            event.preventDefault();
+            
+            if (!window.funcionarioFolhaAtual) return false;
+            
+            const folha = {
+                id: Date.now(),
+                funcionarioId: window.funcionarioFolhaAtual.id,
+                funcionarioNome: window.funcionarioFolhaAtual.nome,
+                dataProcessamento: new Date().toLocaleDateString(),
+                mes: new Date().getMonth() + 1,
+                ano: new Date().getFullYear(),
+                salarioBruto: window.funcionarioFolhaAtual.salario,
+                descontos: {
+                    inss: (parseFloat(document.getElementById('descontoINSS').value) || 0) / 100 * window.funcionarioFolhaAtual.salario,
+                    irrf: (parseFloat(document.getElementById('descontoIRRF').value) || 0) / 100 * window.funcionarioFolhaAtual.salario,
+                    valeTransporte: parseFloat(document.getElementById('valeTransporte').value) || 0,
+                    planoSaude: parseFloat(document.getElementById('planoSaude').value) || 0,
+                    outros: parseFloat(document.getElementById('outrosDescontos').value) || 0
+                },
+                salarioLiquido: parseFloat(document.getElementById('salarioLiquido').textContent.replace('R$ ', '').replace(',', '.'))
+            };
+            
+            // Adicionar à lista de folhas de pagamento
+            if (!dadosEscola.folhasPagamento) {
+                dadosEscola.folhasPagamento = [];
+            }
+            dadosEscola.folhasPagamento.push(folha);
+            
+            // Registrar saída no caixa
+            const movimento = {
+                id: Date.now(),
+                data: new Date().toLocaleDateString(),
+                tipo: 'saida',
+                descricao: `Salário - ${folha.funcionarioNome}`,
+                valor: folha.salarioLiquido,
+                responsavel: usuarioAtual.nome
+            };
+            dadosEscola.movimentosCaixa.push(movimento);
+            
+            salvarDados();
+            closeModal('modalFolha');
+            atualizarTabelaRH();
+            mostrarAlerta('Folha de pagamento processada com sucesso!', 'success');
+            
+            return false;
+        }
+
         function atualizarTabelaRH() {
             const tbody = document.getElementById('listaFuncionarios');
             tbody.innerHTML = '';
 
             dadosEscola.funcionarios.forEach(funcionario => {
+                // Verificar se tem histórico de folhas
+                const folhasAnteriores = dadosEscola.folhasPagamento ? 
+                    dadosEscola.folhasPagamento.filter(f => f.funcionarioId === funcionario.id) : [];
+                
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td>${funcionario.nome}</td>
+                    <td>
+                        ${funcionario.nome}
+                        ${folhasAnteriores.length > 0 ? `<br><small style="color: #666;">${folhasAnteriores.length} folha(s) processada(s)</small>` : ''}
+                    </td>
                     <td>${funcionario.cargo}</td>
                     <td>R$ ${funcionario.salario.toFixed(2)}</td>
                     <td><span class="status ${funcionario.status}">${funcionario.status.toUpperCase()}</span></td>
@@ -1091,19 +1414,38 @@
                         <button class="btn btn-info" onclick="editarFuncionario(${funcionario.id})">Editar</button>
                         <button class="btn btn-danger" onclick="excluirFuncionario(${funcionario.id})">Excluir</button>
                         <button class="btn btn-warning" onclick="gerarFolhaPagamento(${funcionario.id})">Folha</button>
+                        ${folhasAnteriores.length > 0 ? `<button class="btn btn-info" onclick="verHistoricoFolhas(${funcionario.id})">Histórico</button>` : ''}
                     </td>
                 `;
                 tbody.appendChild(tr);
             });
         }
 
-        function gerarFolhaPagamento(id) {
-            const funcionario = dadosEscola.funcionarios.find(f => f.id === id);
-            if (funcionario) {
-                // Simular geração de folha de pagamento
-                const salarioLiquido = funcionario.salario * 0.8; // Desconto fictício
-                mostrarAlerta(`Folha gerada para ${funcionario.nome} - Salário Líquido: R$ ${salarioLiquido.toFixed(2)}`, 'success');
+        function verHistoricoFolhas(funcionarioId) {
+            const funcionario = dadosEscola.funcionarios.find(f => f.id === funcionarioId);
+            const folhas = dadosEscola.folhasPagamento ? 
+                dadosEscola.folhasPagamento.filter(f => f.funcionarioId === funcionarioId) : [];
+            
+            if (folhas.length === 0) {
+                mostrarAlerta('Nenhuma folha encontrada para este funcionário', 'warning');
+                return;
             }
+            
+            let historico = `<h3>Histórico de Folhas - ${funcionario.nome}</h3>`;
+            folhas.forEach(folha => {
+                const totalDescontos = Object.values(folha.descontos).reduce((sum, val) => sum + val, 0);
+                historico += `
+                    <div class="payroll-item">
+                        <strong>${folha.mes}/${folha.ano}</strong> - Processado em ${folha.dataProcessamento}
+                        <br>Salário Bruto: R$ ${folha.salarioBruto.toFixed(2)}
+                        <br>Total Descontos: R$ ${totalDescontos.toFixed(2)}
+                        <br>Salário Líquido: R$ ${folha.salarioLiquido.toFixed(2)}
+                    </div>
+                `;
+            });
+            
+            document.getElementById('conteudoContrato').innerHTML = historico;
+            showModal('modalContrato');
         }
 
         // Funções de Caixa
@@ -1187,6 +1529,55 @@
             document.getElementById('totalEntradas').textContent = `R$ ${totalEntradas.toFixed(2)}`;
             document.getElementById('totalSaidas').textContent = `R$ ${totalSaidas.toFixed(2)}`;
             document.getElementById('saldoCaixa').textContent = `R$ ${saldo.toFixed(2)}`;
+        }
+
+        // Funções de Contratos
+        function atualizarListaContratos() {
+            const container = document.getElementById('listaContratos');
+            
+            if (!dadosEscola.contratos || dadosEscola.contratos.length === 0) {
+                container.innerHTML = '<p>Nenhum contrato armazenado no sistema.</p>';
+                return;
+            }
+            
+            let html = '';
+            dadosEscola.contratos.forEach(contrato => {
+                const aluno = dadosEscola.alunos.find(a => a.contratoId === contrato.id);
+                html += `
+                    <div class="contract-item">
+                        <div>
+                            <strong>${contrato.nome}</strong>
+                            <br><small>Aluno: ${aluno ? aluno.nome : 'Não vinculado'}</small>
+                            <br><small>Data: ${contrato.dataUpload} | Tamanho: ${(contrato.tamanho / 1024).toFixed(2)} KB</small>
+                        </div>
+                        <div>
+                            <button class="btn btn-info" onclick="visualizarContrato(${contrato.id})">Visualizar</button>
+                            <button class="btn btn-danger" onclick="excluirContrato(${contrato.id})">Excluir</button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        function excluirContrato(contratoId) {
+            if (confirm('Tem certeza que deseja excluir este contrato?')) {
+                // Remover referência do aluno
+                const aluno = dadosEscola.alunos.find(a => a.contratoId === contratoId);
+                if (aluno) {
+                    aluno.contratoId = null;
+                    aluno.contrato = '';
+                }
+                
+                // Remover contrato
+                dadosEscola.contratos = dadosEscola.contratos.filter(c => c.id !== contratoId);
+                
+                salvarDados();
+                atualizarListaContratos();
+                atualizarTabelaAlunos();
+                mostrarAlerta('Contrato excluído com sucesso!', 'success');
+            }
         }
 
         // Funções do Dashboard
@@ -1273,6 +1664,7 @@
                             atualizarTabelaAlunos();
                             atualizarTabelaRH();
                             atualizarTabelaCaixa();
+                            atualizarListaContratos();
                             mostrarAlerta('Dados importados com sucesso!', 'success');
                         }
                     } catch (error) {
@@ -1316,6 +1708,7 @@
                                 valorMensalidade: 500.00,
                                 diaVencimento: 10,
                                 formaPagamento: 'boleto',
+                                contratoId: 1,
                                 contrato: 'contrato_joao.pdf',
                                 dataCadastro: '01/01/2025',
                                 situacaoPagamento: 'pago'
@@ -1325,12 +1718,27 @@
                                 nome: 'Ana Costa',
                                 responsavel: 'Carlos Costa',
                                 responsavelFinanceiro: 'Carlos Costa',
-                                status: 'ativo',
+                                status: 'inadimplente',
                                 valorMensalidade: 450.00,
                                 diaVencimento: 15,
                                 formaPagamento: 'cartao',
+                                contratoId: null,
                                 contrato: '',
                                 dataCadastro: '15/01/2025',
+                                situacaoPagamento: 'pendente'
+                            },
+                            {
+                                id: 3,
+                                nome: 'Pedro Santos',
+                                responsavel: 'Ana Santos',
+                                responsavelFinanceiro: 'Ana Santos',
+                                status: 'trancado',
+                                valorMensalidade: 400.00,
+                                diaVencimento: 5,
+                                formaPagamento: 'boleto',
+                                contratoId: null,
+                                contrato: '',
+                                dataCadastro: '20/01/2025',
                                 situacaoPagamento: 'pendente'
                             }
                         ],
@@ -1342,6 +1750,14 @@
                                 salario: 3000.00,
                                 status: 'ativo',
                                 dataAdmissao: '01/01/2025'
+                            },
+                            {
+                                id: 2,
+                                nome: 'Maria Secretária',
+                                cargo: 'Secretária',
+                                salario: 2200.00,
+                                status: 'ativo',
+                                dataAdmissao: '15/01/2025'
                             }
                         ],
                         movimentosCaixa: [
@@ -1352,6 +1768,43 @@
                                 descricao: 'Mensalidade - João Silva',
                                 valor: 500.00,
                                 responsavel: 'Admin'
+                            },
+                            {
+                                id: 2,
+                                data: '05/09/2025',
+                                tipo: 'saida',
+                                descricao: 'Salário - Prof. Roberto',
+                                valor: 2400.00,
+                                responsavel: 'Admin'
+                            }
+                        ],
+                        contratos: [
+                            {
+                                id: 1,
+                                nome: 'contrato_joao.pdf',
+                                tamanho: 2048,
+                                tipo: 'application/pdf',
+                                dataUpload: '01/01/2025',
+                                conteudo: 'CONTRATO DE PRESTAÇÃO DE SERVIÇOS EDUCACIONAIS\n\nContratante: João Silva\nContratada: Escola ABC\n\nCláusulas do contrato...'
+                            }
+                        ],
+                        folhasPagamento: [
+                            {
+                                id: 1,
+                                funcionarioId: 1,
+                                funcionarioNome: 'Prof. Roberto',
+                                dataProcessamento: '01/09/2025',
+                                mes: 8,
+                                ano: 2025,
+                                salarioBruto: 3000.00,
+                                descontos: {
+                                    inss: 330.00,
+                                    irrf: 150.00,
+                                    valeTransporte: 120.00,
+                                    planoSaude: 0,
+                                    outros: 0
+                                },
+                                salarioLiquido: 2400.00
                             }
                         ],
                         configuracoes: {
@@ -1362,7 +1815,14 @@
                 }
             } catch (error) {
                 console.error('Erro ao carregar dados:', error);
-                dadosEscola = { alunos: [], funcionarios: [], movimentosCaixa: [], configuracoes: { sheetId: '', sheetUrl: '' } };
+                dadosEscola = { 
+                    alunos: [], 
+                    funcionarios: [], 
+                    movimentosCaixa: [], 
+                    contratos: [],
+                    folhasPagamento: [],
+                    configuracoes: { sheetId: '', sheetUrl: '' } 
+                };
             }
         }
 
@@ -1380,9 +1840,23 @@
             document.body.appendChild(alerta);
             
             setTimeout(() => {
-                document.body.removeChild(alerta);
+                if (document.body.contains(alerta)) {
+                    document.body.removeChild(alerta);
+                }
             }, 3000);
         }
+
+        // Adicionar listeners para cálculo automático na folha
+        document.addEventListener('DOMContentLoaded', function() {
+            // Event listeners para recálculo automático
+            const inputs = ['descontoINSS', 'descontoIRRF', 'valeTransporte', 'planoSaude', 'outrosDescontos'];
+            inputs.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.addEventListener('input', calcularFolha);
+                }
+            });
+        });
 
         // Inicialização
         document.addEventListener('DOMContentLoaded', function() {
